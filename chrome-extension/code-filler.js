@@ -5,26 +5,68 @@
 
   // Selectors for OTP/verification input fields
   const OTP_SELECTORS = [
-    'input[name*="otp"]',
-    'input[name*="code"]',
-    'input[name*="verify"]',
-    'input[name*="token"]',
-    'input[name*="pin"]',
-    'input[id*="otp"]',
-    'input[id*="code"]',
-    'input[id*="verify"]',
-    'input[id*="token"]',
-    'input[id*="pin"]',
+    // Autocomplete attribute (highest priority - browsers use this)
     'input[autocomplete="one-time-code"]',
+    // Name attributes
+    'input[name*="otp" i]',
+    'input[name*="code" i]',
+    'input[name*="verify" i]',
+    'input[name*="token" i]',
+    'input[name*="pin" i]',
+    'input[name*="mfa" i]',
+    'input[name*="2fa" i]',
+    'input[name*="totp" i]',
+    'input[name*="passcode" i]',
+    'input[name*="activation" i]',
+    // ID attributes
+    'input[id*="otp" i]',
+    'input[id*="code" i]',
+    'input[id*="verify" i]',
+    'input[id*="token" i]',
+    'input[id*="pin" i]',
+    'input[id*="mfa" i]',
+    'input[id*="2fa" i]',
+    'input[id*="totp" i]',
+    'input[id*="passcode" i]',
+    'input[id*="activation" i]',
+    // Class attributes
+    'input[class*="otp" i]',
+    'input[class*="code" i]',
+    'input[class*="verify" i]',
+    'input[class*="pin" i]',
+    // Input mode and type combinations
     'input[inputmode="numeric"]',
+    'input[inputmode="tel"]',
+    'input[type="tel"][maxlength="4"]',
+    'input[type="tel"][maxlength="5"]',
     'input[type="tel"][maxlength="6"]',
+    'input[type="tel"][maxlength="7"]',
+    'input[type="tel"][maxlength="8"]',
+    'input[type="text"][maxlength="4"]',
+    'input[type="text"][maxlength="5"]',
     'input[type="text"][maxlength="6"]',
+    'input[type="text"][maxlength="7"]',
+    'input[type="text"][maxlength="8"]',
+    'input[type="number"][maxlength="4"]',
+    'input[type="number"][maxlength="5"]',
     'input[type="number"][maxlength="6"]',
-    'input[aria-label*="code"]',
-    'input[aria-label*="verification"]',
-    'input[placeholder*="code"]',
-    'input[placeholder*="verification"]',
-    'input[placeholder*="OTP"]'
+    'input[type="number"][maxlength="7"]',
+    'input[type="number"][maxlength="8"]',
+    // Aria labels
+    'input[aria-label*="code" i]',
+    'input[aria-label*="verification" i]',
+    'input[aria-label*="otp" i]',
+    'input[aria-label*="pin" i]',
+    // Placeholders
+    'input[placeholder*="code" i]',
+    'input[placeholder*="verification" i]',
+    'input[placeholder*="OTP" i]',
+    'input[placeholder*="enter" i][placeholder*="digit" i]',
+    'input[placeholder*="digit" i]',
+    // Data attributes (common in React/Vue apps)
+    'input[data-testid*="code" i]',
+    'input[data-testid*="otp" i]',
+    'input[data-testid*="verify" i]'
   ];
 
   // Patterns to identify OTP input groups (multiple single-digit inputs)
@@ -37,11 +79,15 @@
   let currentCode = null;
 
   function findOTPInputs() {
-    // First, check for single input fields
+    // First, check for single input fields using specific selectors
     for (const selector of OTP_SELECTORS) {
-      const input = document.querySelector(selector);
-      if (input && isVisible(input) && !input.disabled) {
-        return { type: 'single', element: input };
+      try {
+        const input = document.querySelector(selector);
+        if (input && isVisible(input) && !input.disabled && !input.readOnly) {
+          return { type: 'single', element: input };
+        }
+      } catch (e) {
+        // Invalid selector, skip
       }
     }
 
@@ -51,7 +97,7 @@
       if (inputs.length >= 4 && inputs.length <= 8) {
         // Check if they're likely OTP inputs (grouped together)
         const visibleInputs = Array.from(inputs).filter(input => 
-          isVisible(input) && !input.disabled
+          isVisible(input) && !input.disabled && !input.readOnly
         );
         
         if (visibleInputs.length >= 4) {
@@ -66,6 +112,38 @@
             return { type: 'multiple', elements: siblings };
           }
         }
+      }
+    }
+
+    // Fallback: Look for any visible, empty text/number input that could be a code field
+    const allInputs = document.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input:not([type])');
+    for (const input of allInputs) {
+      if (isVisible(input) && !input.disabled && !input.readOnly && !input.value) {
+        // Check if it's in a form that looks like a verification form
+        const form = input.closest('form');
+        const container = input.closest('div, section, main');
+        const pageText = (form?.textContent || container?.textContent || '').toLowerCase();
+        
+        // Check for verification-related text nearby
+        const verificationKeywords = ['verify', 'code', 'otp', 'authentication', 'confirm', 'enter', 'digit', 'security'];
+        const hasVerificationContext = verificationKeywords.some(kw => pageText.includes(kw));
+        
+        if (hasVerificationContext) {
+          // Additional check: input should accept numeric values or be short
+          const maxLength = parseInt(input.getAttribute('maxlength')) || 100;
+          if (maxLength <= 10 || input.inputMode === 'numeric' || input.type === 'tel' || input.type === 'number') {
+            return { type: 'single', element: input };
+          }
+        }
+      }
+    }
+
+    // Last resort: check if there's a focused input that could be a code field
+    const focused = document.activeElement;
+    if (focused && focused.tagName === 'INPUT' && isVisible(focused) && !focused.disabled) {
+      const inputType = focused.type || 'text';
+      if (['text', 'tel', 'number'].includes(inputType)) {
+        return { type: 'single', element: focused };
       }
     }
 
@@ -92,12 +170,16 @@
       // Fill single input
       const input = otpInputs.element;
       input.focus();
+      
+      // Set value using multiple methods to ensure it works with React/Vue/Angular
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+      nativeInputValueSetter.call(input, code);
+      
+      // Also set directly
       input.value = code;
       
-      // Dispatch events to trigger any listeners
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      input.dispatchEvent(new Event('change', { bubbles: true }));
-      input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+      // Dispatch comprehensive events for different frameworks
+      triggerInputEvents(input);
       
       showFilledNotification(code);
       return true;
@@ -107,11 +189,15 @@
       const digits = code.split('');
       
       for (let i = 0; i < Math.min(inputs.length, digits.length); i++) {
-        inputs[i].focus();
-        inputs[i].value = digits[i];
-        inputs[i].dispatchEvent(new Event('input', { bubbles: true }));
-        inputs[i].dispatchEvent(new Event('change', { bubbles: true }));
-        inputs[i].dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+        const input = inputs[i];
+        input.focus();
+        
+        // Set value using native setter for React compatibility
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        nativeInputValueSetter.call(input, digits[i]);
+        input.value = digits[i];
+        
+        triggerInputEvents(input);
       }
       
       // Focus the last input or next element
@@ -124,6 +210,28 @@
     }
 
     return false;
+  }
+
+  function triggerInputEvents(input) {
+    // Create and dispatch events that work with various frameworks
+    
+    // Input event (React, Vue)
+    const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+    input.dispatchEvent(inputEvent);
+    
+    // Change event
+    const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+    input.dispatchEvent(changeEvent);
+    
+    // Keyboard events
+    input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Unidentified' }));
+    input.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true, key: 'Unidentified' }));
+    input.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Unidentified' }));
+    
+    // Focus/blur cycle can trigger validation
+    input.dispatchEvent(new FocusEvent('focus', { bubbles: true }));
+    input.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+    input.focus();
   }
 
   function showFilledNotification(code) {
