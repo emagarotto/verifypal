@@ -3,29 +3,63 @@
 (function() {
   'use strict';
 
-  // Patterns for detecting verification codes
-  const CODE_PATTERNS = [
+  // Specific patterns that directly capture codes after common phrases
+  const DIRECT_CODE_PATTERNS = [
+    // "Your code is: 123456" or "Your code is 123456"
+    /(?:your\s+(?:verification\s+)?code\s+is[:\s]*)\s*(\d{4,8})/gi,
+    /(?:your\s+(?:verification\s+)?code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
+    // "Verification code: 123456"
+    /(?:verification\s+code[:\s]*)\s*(\d{4,8})/gi,
+    /(?:verification\s+code[:\s]*)\s*([A-Z0-9]{4,8})/gi,
+    // "Enter this code: 123456"
+    /(?:enter\s+(?:this\s+)?code[:\s]*)\s*(\d{4,8})/gi,
+    // "Use code: 123456"
+    /(?:use\s+(?:this\s+)?code[:\s]*)\s*(\d{4,8})/gi,
+    // "OTP: 123456" or "OTP is 123456"
+    /(?:otp[:\s]+(?:is\s+)?)\s*(\d{4,8})/gi,
+    // "Security code: 123456"
+    /(?:security\s+code[:\s]*)\s*(\d{4,8})/gi,
+    // "Sign-in code: 123456"
+    /(?:sign[- ]?in\s+code[:\s]*)\s*(\d{4,8})/gi,
+    // "Login code: 123456"
+    /(?:login\s+code[:\s]*)\s*(\d{4,8})/gi,
+    // "One-time code: 123456"
+    /(?:one[- ]?time\s+(?:password|code|passcode)[:\s]*)\s*(\d{4,8})/gi,
+    // "PIN: 123456"
+    /(?:pin[:\s]*)\s*(\d{4,8})/gi,
+    // "Code: 123456" (standalone)
+    /(?:^|\s)code[:\s]+(\d{4,8})(?:\s|$|\.)/gim,
+    // Codes with spaces like "123 456" or dashes "123-456"
+    /(?:code[:\s]*)\s*(\d{3}[\s-]\d{3})/gi,
+    // Bold or emphasized codes (often in HTML emails)
+    /(?:is|:)\s*<[^>]*>(\d{4,8})<\/[^>]*>/gi
+  ];
+
+  // Fallback patterns for detecting verification codes
+  const FALLBACK_CODE_PATTERNS = [
     // 6-digit codes (most common)
     /\b(\d{6})\b/g,
-    // 4-digit codes
+    // 4-digit codes  
     /\b(\d{4})\b/g,
     // 8-digit codes
     /\b(\d{8})\b/g,
-    // Alphanumeric codes (6-8 chars)
-    /\b([A-Z0-9]{6,8})\b/gi
+    // Alphanumeric codes (6-8 chars, uppercase)
+    /\b([A-Z0-9]{6,8})\b/g
   ];
 
   // Keywords that indicate a verification code context
   const CONTEXT_KEYWORDS = [
     'verification code',
-    'verify',
-    'confirm',
-    'authentication',
-    'one-time',
+    'verify your',
+    'confirm your',
+    'authentication code',
+    'one-time password',
+    'one-time code',
     'otp',
     'passcode',
     'security code',
     'sign-in code',
+    'sign in code',
     'login code',
     'access code',
     'confirmation code',
@@ -40,7 +74,9 @@
     'your code is',
     'code is:',
     'pin code',
-    'secret code'
+    'secret code',
+    'authorize',
+    'approve sign in'
   ];
 
   // Email subjects that indicate verification emails
@@ -129,24 +165,63 @@
     const hasContext = hasVerificationContext(content) || isLikelyVerificationEmail(subject);
     if (!hasContext) return null;
 
-    // Look for codes in the content
-    for (const pattern of CODE_PATTERNS) {
-      const matches = content.match(pattern);
-      if (matches) {
-        // Filter out unlikely codes
-        for (const match of matches) {
-          // Prefer 6-digit codes
-          if (/^\d{6}$/.test(match)) {
-            return match;
+    // FIRST: Try direct patterns that look for codes immediately after keywords
+    // These are much more accurate because they find codes in specific positions
+    for (const pattern of DIRECT_CODE_PATTERNS) {
+      // Reset regex state
+      pattern.lastIndex = 0;
+      let match;
+      while ((match = pattern.exec(content)) !== null) {
+        let code = match[1];
+        // Clean up codes with spaces/dashes
+        code = code.replace(/[\s-]/g, '');
+        if (code && code.length >= 4 && code.length <= 8) {
+          // Exclude unlikely codes
+          if (isValidCode(code)) {
+            return code;
           }
         }
-        // Fall back to other patterns
+      }
+    }
+
+    // SECOND: Look for codes that appear near context keywords (within 50 chars)
+    const lowerContent = content.toLowerCase();
+    for (const keyword of CONTEXT_KEYWORDS) {
+      const keywordPos = lowerContent.indexOf(keyword.toLowerCase());
+      if (keywordPos !== -1) {
+        // Get text around the keyword (50 chars before and 100 after)
+        const start = Math.max(0, keywordPos - 50);
+        const end = Math.min(content.length, keywordPos + keyword.length + 100);
+        const nearbyText = content.substring(start, end);
+        
+        // Look for 6-digit codes first (most common)
+        const sixDigitMatch = nearbyText.match(/\b(\d{6})\b/);
+        if (sixDigitMatch && isValidCode(sixDigitMatch[1])) {
+          return sixDigitMatch[1];
+        }
+        
+        // Then 4-8 digit codes
+        const digitMatch = nearbyText.match(/\b(\d{4,8})\b/);
+        if (digitMatch && isValidCode(digitMatch[1])) {
+          return digitMatch[1];
+        }
+        
+        // Then alphanumeric
+        const alphaMatch = nearbyText.match(/\b([A-Z0-9]{6,8})\b/);
+        if (alphaMatch && isValidCode(alphaMatch[1])) {
+          return alphaMatch[1];
+        }
+      }
+    }
+
+    // THIRD: Fallback to general pattern matching with preferences
+    for (const pattern of FALLBACK_CODE_PATTERNS) {
+      pattern.lastIndex = 0;
+      const matches = content.match(pattern);
+      if (matches) {
+        // Find the first valid code
         for (const match of matches) {
-          // Exclude common non-code numbers (years, etc.)
-          if (/^(19|20)\d{2}$/.test(match)) continue;
-          if (/^0{4,}$/.test(match)) continue;
-          if (/^1{4,}$/.test(match)) continue;
-          if (match.length >= 4 && match.length <= 8) {
+          if (isValidCode(match)) {
             return match;
           }
         }
@@ -154,6 +229,18 @@
     }
 
     return null;
+  }
+
+  function isValidCode(code) {
+    // Exclude common non-code patterns
+    if (/^(19|20)\d{2}$/.test(code)) return false; // Years like 2024
+    if (/^0{4,}$/.test(code)) return false; // All zeros
+    if (/^1{4,}$/.test(code)) return false; // All ones
+    if (/^(.)\1+$/.test(code)) return false; // Repeated single digit
+    if (/^(12345678|87654321|123456|654321)$/.test(code)) return false; // Sequential
+    if (/^(00000000|11111111|99999999)$/.test(code)) return false; // All same
+    
+    return true;
   }
 
   function scanForCode() {
