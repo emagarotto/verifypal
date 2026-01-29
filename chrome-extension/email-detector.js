@@ -441,6 +441,24 @@
     });
   }
 
+  // Listen for scan requests from background script
+  if (isExtensionValid()) {
+    try {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (!isExtensionValid()) return;
+        
+        if (message.type === 'SCAN_NOW') {
+          // Force a fresh scan, temporarily reset lastDetectedCode to allow re-detection
+          scanForCode();
+          sendResponse({ success: true });
+        }
+        return true;
+      });
+    } catch (e) {
+      // Extension context invalidated
+    }
+  }
+
   // Initialize
   function init() {
     // Initial scan

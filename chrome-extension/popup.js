@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const codeSource = document.getElementById('codeSource');
   const copyBtn = document.getElementById('copyBtn');
   const clearBtn = document.getElementById('clearBtn');
+  const fetchBtn = document.getElementById('fetchBtn');
   const status = document.getElementById('status');
   const autoPasteToggle = document.getElementById('autoPasteToggle');
   const historySection = document.getElementById('historySection');
@@ -80,6 +81,59 @@ document.addEventListener('DOMContentLoaded', () => {
       copyBtn.disabled = true;
       showStatus('Cleared current code', 'success');
     });
+  });
+
+  fetchBtn.addEventListener('click', () => {
+    if (!isExtensionValid()) return;
+    
+    fetchBtn.disabled = true;
+    fetchBtn.textContent = 'Checking email...';
+    
+    try {
+      chrome.runtime.sendMessage({ type: 'FETCH_FROM_EMAIL' }, (response) => {
+        if (chrome.runtime.lastError) {
+          fetchBtn.disabled = false;
+          fetchBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Fetch from Email
+          `;
+          showStatus('Error fetching', 'error');
+          return;
+        }
+        
+        if (response && response.success) {
+          showStatus('Switching to email tab...', 'success');
+          // Reload data after a short delay to pick up any new code
+          setTimeout(() => {
+            loadData();
+            fetchBtn.disabled = false;
+            fetchBtn.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              Fetch from Email
+            `;
+          }, 2000);
+        } else {
+          fetchBtn.disabled = false;
+          fetchBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Fetch from Email
+          `;
+          showStatus('No email tab found. Open Gmail, Outlook, or Yahoo Mail first.', 'error');
+        }
+      });
+    } catch (e) {
+      fetchBtn.disabled = false;
+      showStatus('Error', 'error');
+    }
   });
 
   function loadData() {

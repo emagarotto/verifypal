@@ -86,3 +86,68 @@ chrome.runtime.onInstalled.addListener(() => {
     detectedCodes: []
   });
 });
+
+// Function to find and focus on email tab, then request code scan
+async function findEmailTabAndScan() {
+  const emailPatterns = [
+    '*://mail.google.com/*',
+    '*://outlook.live.com/*',
+    '*://outlook.office.com/*',
+    '*://outlook.office365.com/*',
+    '*://mail.yahoo.com/*'
+  ];
+  
+  let emailTab = null;
+  
+  // Search for an open email tab
+  for (const pattern of emailPatterns) {
+    const tabs = await chrome.tabs.query({ url: pattern });
+    if (tabs.length > 0) {
+      // Prefer the most recently accessed email tab
+      emailTab = tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0];
+      break;
+    }
+  }
+  
+  if (emailTab) {
+    // Focus the email tab briefly to trigger any updates
+    const currentTab = await chrome.tabs.query({ active: true, currentWindow: true });
+    const originalTabId = currentTab[0]?.id;
+    
+    // Activate the email tab
+    await chrome.tabs.update(emailTab.id, { active: true });
+    await chrome.windows.update(emailTab.windowId, { focused: true });
+    
+    // Request immediate scan from the content script
+    try {
+      await chrome.tabs.sendMessage(emailTab.id, { type: 'SCAN_NOW' });
+    } catch (e) {
+      // Content script might not be ready
+    }
+    
+    // Wait briefly for scan to complete, then switch back
+    setTimeout(async () => {
+      if (originalTabId) {
+        try {
+          await chrome.tabs.update(originalTabId, { active: true });
+        } catch (e) {
+          // Original tab might be closed
+        }
+      }
+    }, 1500);
+    
+    return true;
+  }
+  
+  return false;
+}
+
+// Listen for request to fetch code from email
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'FETCH_FROM_EMAIL') {
+    findEmailTabAndScan().then(found => {
+      sendResponse({ success: found });
+    });
+    return true;
+  }
+});

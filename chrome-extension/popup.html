@@ -122,6 +122,22 @@
     .btn-secondary:hover {
       background: rgba(255, 255, 255, 0.3);
     }
+
+    .btn-fetch {
+      width: 100%;
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-fetch:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
     
     .btn:disabled {
       opacity: 0.5;
@@ -287,6 +303,14 @@
       <button class="btn btn-primary" id="copyBtn" disabled>Copy Code</button>
       <button class="btn btn-secondary" id="clearBtn">Clear</button>
     </div>
+
+    <button class="btn btn-fetch" id="fetchBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+        <polyline points="22,6 12,13 2,6"></polyline>
+      </svg>
+      Fetch from Email
+    </button>
 
     <div class="status" id="status" style="display: none;"></div>
 
