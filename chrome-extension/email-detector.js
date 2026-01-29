@@ -5,35 +5,42 @@
 
   // Specific patterns that directly capture codes after common phrases
   const DIRECT_CODE_PATTERNS = [
-    // "Your activation code is: 123456"
-    /(?:your\s+activation\s+code\s+is[:\s]*)\s*(\d{4,8})/gi,
-    /(?:your\s+activation\s+code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
-    /(?:activation\s+code[:\s]*)\s*(\d{4,8})/gi,
-    /(?:activation\s+code[:\s]*)\s*([A-Z0-9]{4,8})/gi,
-    // "Your code is: 123456" or "Your code is 123456"
-    /(?:your\s+(?:verification\s+)?code\s+is[:\s]*)\s*(\d{4,8})/gi,
-    /(?:your\s+(?:verification\s+)?code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
-    // "Verification code: 123456"
-    /(?:verification\s+code[:\s]*)\s*(\d{4,8})/gi,
-    /(?:verification\s+code[:\s]*)\s*([A-Z0-9]{4,8})/gi,
-    // "Enter this code: 123456"
-    /(?:enter\s+(?:this\s+)?code[:\s]*)\s*(\d{4,8})/gi,
-    // "Use code: 123456"
-    /(?:use\s+(?:this\s+)?code[:\s]*)\s*(\d{4,8})/gi,
-    // "OTP: 123456" or "OTP is 123456"
-    /(?:otp[:\s]+(?:is\s+)?)\s*(\d{4,8})/gi,
-    // "Security code: 123456"
-    /(?:security\s+code[:\s]*)\s*(\d{4,8})/gi,
-    // "Sign-in code: 123456"
-    /(?:sign[- ]?in\s+code[:\s]*)\s*(\d{4,8})/gi,
-    // "Login code: 123456"
-    /(?:login\s+code[:\s]*)\s*(\d{4,8})/gi,
-    // "One-time code: 123456"
-    /(?:one[- ]?time\s+(?:password|code|passcode)[:\s]*)\s*(\d{4,8})/gi,
-    // "PIN: 123456"
-    /(?:pin[:\s]*)\s*(\d{4,8})/gi,
-    // "Code: 123456" (standalone)
-    /(?:^|\s)code[:\s]+(\d{4,8})(?:\s|$|\.)/gim,
+    // "Your X code is: 123456" patterns
+    /(?:your\s+(?:verification|sign[- ]?in|login|log[- ]?in|security|one[- ]?time|temporary|authentication|activation|access|approval|recovery|reset|confirmation|2fa)\s+code\s+is[:\s]*)\s*(\d{4,8})/gi,
+    /(?:your\s+(?:verification|sign[- ]?in|login|log[- ]?in|security|one[- ]?time|temporary|authentication|activation|access|approval|recovery|reset|confirmation|2fa)\s+code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
+    // "Your code is: 123456"
+    /(?:your\s+code\s+is[:\s]*)\s*(\d{4,8})/gi,
+    /(?:your\s+code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
+    // "Your OTP is: 123456"
+    /(?:your\s+otp\s+(?:is[:\s]*|code[:\s]*))\s*(\d{4,8})/gi,
+    // "X code: 123456" patterns
+    /(?:(?:verification|sign[- ]?in|login|log[- ]?in|security|one[- ]?time|temporary|authentication|activation|access|approval|recovery|reset|confirmation|account|email|phone|identity|password)\s+code[:\s]*)\s*(\d{4,8})/gi,
+    /(?:(?:verification|sign[- ]?in|login|log[- ]?in|security|one[- ]?time|temporary|authentication|activation|access|approval|recovery|reset|confirmation|account|email|phone|identity|password)\s+code[:\s]*)\s*([A-Z0-9]{4,8})/gi,
+    // "X passcode/password: 123456"
+    /(?:(?:one[- ]?time|temporary)\s+(?:passcode|password)[:\s]*)\s*(\d{4,8})/gi,
+    // "Here is your X code: 123456"
+    /(?:here\s+is\s+your\s+(?:verification\s+|sign[- ]?in\s+|login\s+|security\s+|one[- ]?time\s+)?code[:\s]*)\s*(\d{4,8})/gi,
+    /(?:here\s+is\s+your\s+(?:verification\s+|sign[- ]?in\s+|login\s+|security\s+|one[- ]?time\s+)?code[:\s]*)\s*([A-Z0-9]{4,8})/gi,
+    // "Use this code: 123456" / "Use the code below: 123456"
+    /(?:(?:please\s+)?use\s+(?:this|the)\s+(?:verification\s+)?code(?:\s+below)?[:\s]*)\s*(\d{4,8})/gi,
+    // "Enter this code: 123456" / "Enter the code below: 123456"
+    /(?:(?:please\s+)?enter\s+(?:this|the)\s+(?:verification\s+|following\s+)?code(?:\s+below)?[:\s]*)\s*(\d{4,8})/gi,
+    // "Enter this code to X: 123456"
+    /(?:enter\s+this\s+code\s+to\s+(?:continue|sign\s+in|log\s+in|complete|reset|confirm|verify)[:\s]*)\s*(\d{4,8})/gi,
+    // "To sign in, use the code below: 123456"
+    /(?:to\s+(?:sign\s+in|log\s+in|finish|complete|verify|reset|confirm|activate)[^:]*[:\s]+)\s*(\d{4,8})/gi,
+    // "OTP: 123456" or "OTP code: 123456"
+    /(?:otp(?:\s+code)?[:\s]+)\s*(\d{4,8})/gi,
+    // "2FA code: 123456"
+    /(?:2fa\s+code[:\s]*)\s*(\d{4,8})/gi,
+    // "2 step verification code: 123456"
+    /(?:2\s*(?:step|factor)\s+(?:verification\s+)?code[:\s]*)\s*(\d{4,8})/gi,
+    // "Two factor/step code: 123456"
+    /(?:two\s+(?:factor|step)\s+(?:authentication\s+|verification\s+)?code[:\s]*)\s*(\d{4,8})/gi,
+    // "Code: 123456" (standalone on line)
+    /(?:^|\n)\s*code[:\s]+(\d{4,8})(?:\s|$|\.|\n)/gim,
+    // "Security code is: 123456"
+    /(?:security\s+code\s+is[:\s]*)\s*(\d{4,8})/gi,
     // Codes with spaces like "123 456" or dashes "123-456"
     /(?:code[:\s]*)\s*(\d{3}[\s-]\d{3})/gi,
     // Bold or emphasized codes (often in HTML emails)
@@ -54,50 +61,61 @@
 
   // Keywords that indicate a verification code context
   const CONTEXT_KEYWORDS = [
-    'activation code',
-    'verification code',
-    'verify your',
-    'confirm your',
-    'authentication code',
-    'one-time password',
-    'one-time code',
-    'otp',
-    'passcode',
-    'security code',
-    'sign-in code',
-    'sign in code',
-    'login code',
-    'access code',
-    'confirmation code',
-    'two-factor',
-    '2fa',
-    'mfa',
-    'multi-factor',
-    'temporary code',
-    'enter this code',
-    'enter the code',
-    'use this code',
-    'your code is',
-    'code is:',
-    'pin code',
-    'secret code',
-    'authorize',
-    'approve sign in'
+    // Code type keywords
+    'verification code', 'your verification code', 'your sign-in code', 'your login code',
+    'your log in code', 'your security code', 'your one time code', 'one time code',
+    'one time password', 'one time passcode', 'your one time password', 'your one time passcode',
+    'temporary code', 'temporary passcode', 'temporary password', 'your temporary code',
+    'your temporary passcode', 'your temporary password', 'authentication code',
+    'your authentication code', 'two factor authentication code', '2 step verification code',
+    '2 factor code', 'two step verification code', 'account verification code',
+    'email verification code', 'phone verification code', 'identity verification code',
+    'security verification code', 'login verification code', 'sign in verification code',
+    'password reset code', 'reset password code', 'your password reset code', 'your reset code',
+    'account recovery code', 'recovery code', 'your recovery code', 'confirmation code',
+    'your confirmation code', 'account confirmation code', 'activation code',
+    'your activation code', 'account activation code', 'access code', 'your access code',
+    'approval code', 'your approval code', 'otp', 'otp code', 'your otp', 'your 2fa code',
+    // Action keywords
+    'verification required', 'verify your email', 'verify your account', 'confirm your email',
+    'confirm your account', 'finish signing in', 'complete your sign in',
+    'your code is', 'your code is as follows', 'your code is listed below',
+    'your code is shown below', 'here is your code', 'here is your verification code',
+    'here is your sign in code', 'here is your login code', 'here is your security code',
+    'here is your one time code', 'here is your one time password',
+    // Use/enter instructions
+    'use this code', 'use this verification code', 'use the code below', 'use the code shown below',
+    'please use this code', 'please use the code below', 'please use the following code',
+    'please use the following verification code', 'please enter this code',
+    'please enter the code below', 'please enter the following code',
+    'please enter the following verification code', 'enter this code', 'enter this verification code',
+    'enter the code below', 'enter the following code', 'enter the following verification code',
+    'enter the code in the app', 'enter this code to continue', 'enter this code to sign in',
+    'enter this code to log in', 'enter this code to complete', 'enter this code to reset',
+    'enter this code to confirm', 'enter this code to verify',
+    'use this code to sign in', 'use this code to log in', 'use this code to complete',
+    'use this code to reset', 'use this code to confirm', 'use this code to verify',
+    'to sign in, use the code', 'to log in, use the code', 'to finish signing in',
+    'to complete your login', 'to complete your sign in', 'to verify your email',
+    'to verify your account', 'to verify your identity', 'to reset your password',
+    'to confirm your email', 'to confirm your account', 'to activate your account',
+    'use the following code to access', 'use the following code to complete',
+    'use the following code to continue',
+    // Expiry notices
+    'this code expires', 'this code is valid for', 'this code can be used only once',
+    'this code can only be used once', 'do not share this code',
+    // Simple keywords
+    'sign in code', 'login code', 'security code', '2fa', 'mfa'
   ];
 
   // Email subjects that indicate verification emails
   const SUBJECT_KEYWORDS = [
-    'verification',
-    'verify',
-    'confirm',
-    'sign in',
-    'login',
-    'security',
-    'authentication',
-    'one-time',
-    'otp',
-    'code',
-    'access'
+    'verification', 'verify', 'confirm', 'confirmation',
+    'sign in', 'sign-in', 'signin', 'login', 'log in', 'log-in',
+    'security', 'authentication', 'authorize', 'authorization',
+    'one-time', 'one time', 'otp', '2fa', 'two-factor', 'two factor',
+    'code', 'access', 'activation', 'activate', 'recovery', 'reset',
+    'passcode', 'password', 'approval', 'approve'
   ];
 
   let lastDetectedCode = null;
