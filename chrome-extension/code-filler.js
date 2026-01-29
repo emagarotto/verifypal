@@ -284,27 +284,51 @@
     }, 3000);
 
     // Tell background script the code was used
-    chrome.runtime.sendMessage({ type: 'CODE_USED' });
+    if (isExtensionValid()) {
+      try {
+        chrome.runtime.sendMessage({ type: 'CODE_USED' });
+      } catch (e) {
+        // Extension context invalidated
+      }
+    }
+  }
+
+  function isExtensionValid() {
+    try {
+      return chrome.runtime && chrome.runtime.id;
+    } catch (e) {
+      return false;
+    }
   }
 
   function checkAndFill(forceRetry = false) {
-    chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
-      if (response && response.code && response.autoPasteEnabled) {
-        // Fill if it's a new code OR if forceRetry is true (e.g., tab switched)
-        if (response.code !== currentCode || forceRetry) {
-          const previousCode = currentCode;
-          currentCode = response.code;
-          
-          // Try to fill the code
-          const filled = fillCode(response.code);
-          
-          if (!filled) {
-            // Watch for OTP inputs appearing later
-            watchForOTPInputs(response.code);
+    if (!isExtensionValid()) return;
+    
+    try {
+      chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
+        if (chrome.runtime.lastError) {
+          // Extension context invalidated, silently ignore
+          return;
+        }
+        if (response && response.code && response.autoPasteEnabled) {
+          // Fill if it's a new code OR if forceRetry is true (e.g., tab switched)
+          if (response.code !== currentCode || forceRetry) {
+            const previousCode = currentCode;
+            currentCode = response.code;
+            
+            // Try to fill the code
+            const filled = fillCode(response.code);
+            
+            if (!filled) {
+              // Watch for OTP inputs appearing later
+              watchForOTPInputs(response.code);
+            }
           }
         }
-      }
-    });
+      });
+    } catch (e) {
+      // Extension context invalidated, silently ignore
+    }
   }
 
   function watchForOTPInputs(code) {
@@ -326,23 +350,38 @@
   }
 
   // Listen for new codes from background script
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'NEW_CODE_AVAILABLE') {
-      currentCode = message.code;
-      
-      // Check settings and try to fill
-      chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
-        if (response && response.autoPasteEnabled) {
-          const filled = fillCode(message.code);
-          if (!filled) {
-            watchForOTPInputs(message.code);
+  if (isExtensionValid()) {
+    try {
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (!isExtensionValid()) {
+          return;
+        }
+        
+        if (message.type === 'NEW_CODE_AVAILABLE') {
+          currentCode = message.code;
+          
+          // Check settings and try to fill
+          try {
+            chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
+              if (chrome.runtime.lastError) return;
+              if (response && response.autoPasteEnabled) {
+                const filled = fillCode(message.code);
+                if (!filled) {
+                  watchForOTPInputs(message.code);
+                }
+              }
+            });
+          } catch (e) {
+            // Extension context invalidated
           }
         }
+        sendResponse({ received: true });
+        return true;
       });
+    } catch (e) {
+      // Extension context invalidated
     }
-    sendResponse({ received: true });
-    return true;
-  });
+  }
 
   // Check for existing code on page load
   function init() {
@@ -367,15 +406,21 @@
       if (target.tagName === 'INPUT') {
         // Check if this might be an OTP field that we should fill
         setTimeout(() => {
-          chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
-            if (response && response.code && response.autoPasteEnabled) {
-              const otpInputs = findOTPInputs();
-              if (otpInputs && !currentCode) {
-                currentCode = response.code;
-                fillCode(response.code);
+          if (!isExtensionValid()) return;
+          try {
+            chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
+              if (chrome.runtime.lastError) return;
+              if (response && response.code && response.autoPasteEnabled) {
+                const otpInputs = findOTPInputs();
+                if (otpInputs && !currentCode) {
+                  currentCode = response.code;
+                  fillCode(response.code);
+                }
               }
-            }
-          });
+            });
+          } catch (e) {
+            // Extension context invalidated
+          }
         }, 100);
       }
     }, { passive: true });

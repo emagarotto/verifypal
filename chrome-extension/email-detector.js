@@ -267,7 +267,17 @@
     return true;
   }
 
+  function isExtensionValid() {
+    try {
+      return chrome.runtime && chrome.runtime.id;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function scanForCode() {
+    if (!isExtensionValid()) return;
+    
     const { content, subject, provider } = getEmailContent();
     
     if (!content) return;
@@ -278,11 +288,16 @@
       lastDetectedCode = code;
       
       // Send the code to the background script
-      chrome.runtime.sendMessage({
-        type: 'CODE_DETECTED',
-        code: code,
-        source: provider
-      });
+      try {
+        chrome.runtime.sendMessage({
+          type: 'CODE_DETECTED',
+          code: code,
+          source: provider
+        });
+      } catch (e) {
+        // Extension context invalidated, silently ignore
+        return;
+      }
       
       // Visual feedback
       showCodeNotification(code);
