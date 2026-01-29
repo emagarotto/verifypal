@@ -8,12 +8,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const historySection = document.getElementById('historySection');
   const historyList = document.getElementById('historyList');
 
+  function isExtensionValid() {
+    try {
+      return chrome.runtime && chrome.runtime.id;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function safeStorageGet(keys, callback) {
+    if (!isExtensionValid()) return;
+    try {
+      chrome.storage.local.get(keys, (data) => {
+        if (chrome.runtime.lastError) return;
+        callback(data);
+      });
+    } catch (e) {
+      // Extension context invalidated
+    }
+  }
+
+  function safeStorageSet(data, callback) {
+    if (!isExtensionValid()) return;
+    try {
+      chrome.storage.local.set(data, () => {
+        if (chrome.runtime.lastError) return;
+        if (callback) callback();
+      });
+    } catch (e) {
+      // Extension context invalidated
+    }
+  }
+
+  function safeStorageRemove(keys, callback) {
+    if (!isExtensionValid()) return;
+    try {
+      chrome.storage.local.remove(keys, () => {
+        if (chrome.runtime.lastError) return;
+        if (callback) callback();
+      });
+    } catch (e) {
+      // Extension context invalidated
+    }
+  }
+
   // Load settings and current code
   loadData();
 
   // Event listeners
   autoPasteToggle.addEventListener('change', (e) => {
-    chrome.storage.local.set({ autoPasteEnabled: e.target.checked });
+    safeStorageSet({ autoPasteEnabled: e.target.checked });
     showStatus(e.target.checked ? 'Auto-paste enabled' : 'Auto-paste disabled', 'success');
   });
 
@@ -30,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   clearBtn.addEventListener('click', () => {
-    chrome.storage.local.remove(['currentCode', 'codeSource', 'codeTimestamp'], () => {
+    safeStorageRemove(['currentCode', 'codeSource', 'codeTimestamp'], () => {
       codeValue.innerHTML = '<span class="code-empty">No code detected yet</span>';
       codeSource.textContent = '';
       copyBtn.disabled = true;
@@ -39,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function loadData() {
-    chrome.storage.local.get(['currentCode', 'codeSource', 'codeTimestamp', 'autoPasteEnabled', 'codeHistory'], (data) => {
+    safeStorageGet(['currentCode', 'codeSource', 'codeTimestamp', 'autoPasteEnabled', 'codeHistory'], (data) => {
       // Load auto-paste setting
       autoPasteToggle.checked = data.autoPasteEnabled !== false;
 
@@ -90,9 +134,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Listen for storage changes
-  chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'local' && changes.currentCode) {
-      loadData();
+  if (isExtensionValid()) {
+    try {
+      chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (!isExtensionValid()) return;
+        if (namespace === 'local' && changes.currentCode) {
+          loadData();
+        }
+      });
+    } catch (e) {
+      // Extension context invalidated
     }
-  });
+  }
 });
