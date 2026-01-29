@@ -117,42 +117,74 @@
         for (const modal of modals) {
           if (!isVisible(modal)) continue;
           
-          // Look for OTP inputs inside the modal
-          for (const selector of OTP_SELECTORS) {
-            try {
-              const input = modal.querySelector(selector);
-              if (input && isVisible(input) && !input.disabled && !input.readOnly) {
-                return { type: 'single', element: input };
-              }
-            } catch (e) {}
-          }
-          
-          // Look for single-digit inputs inside modal
-          for (const selector of SINGLE_DIGIT_SELECTORS) {
-            const inputs = modal.querySelectorAll(selector);
-            const visibleInputs = Array.from(inputs).filter(input => 
-              isVisible(input) && !input.disabled && !input.readOnly
-            );
-            
-            if (visibleInputs.length >= 4 && visibleInputs.length <= 8) {
-              return { type: 'multiple', elements: visibleInputs };
-            }
-          }
-          
-          // Fallback: any empty text/number input in the modal that looks like a code field
-          const allInputs = modal.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input:not([type])');
-          for (const input of allInputs) {
-            if (isVisible(input) && !input.disabled && !input.readOnly && !input.value) {
-              // Check if it looks like a code input (short maxlength or numeric pattern)
-              const maxLength = input.maxLength;
-              if ((maxLength >= 4 && maxLength <= 8) || input.inputMode === 'numeric') {
-                return { type: 'single', element: input };
-              }
-            }
-          }
+          // Search in modal and any shadow roots
+          const result = searchInElementAndShadow(modal);
+          if (result) return result;
         }
       } catch (e) {}
     }
+    return null;
+  }
+
+  function searchInElementAndShadow(container) {
+    // Search in regular DOM
+    const result = searchForOTPInputs(container);
+    if (result) return result;
+    
+    // Search in shadow roots
+    const allElements = container.querySelectorAll('*');
+    for (const el of allElements) {
+      if (el.shadowRoot) {
+        const shadowResult = searchForOTPInputs(el.shadowRoot);
+        if (shadowResult) return shadowResult;
+      }
+    }
+    
+    return null;
+  }
+
+  function searchForOTPInputs(container) {
+    // Look for OTP inputs using specific selectors
+    for (const selector of OTP_SELECTORS) {
+      try {
+        const input = container.querySelector(selector);
+        if (input && isVisible(input) && !input.disabled && !input.readOnly) {
+          return { type: 'single', element: input };
+        }
+      } catch (e) {}
+    }
+    
+    // Look for single-digit inputs
+    for (const selector of SINGLE_DIGIT_SELECTORS) {
+      const inputs = container.querySelectorAll(selector);
+      const visibleInputs = Array.from(inputs).filter(input => 
+        isVisible(input) && !input.disabled && !input.readOnly
+      );
+      
+      if (visibleInputs.length >= 4 && visibleInputs.length <= 8) {
+        return { type: 'multiple', elements: visibleInputs };
+      }
+    }
+    
+    // Fallback: any visible text/number input in the container
+    const allInputs = container.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input:not([type])');
+    for (const input of allInputs) {
+      if (isVisible(input) && !input.disabled && !input.readOnly) {
+        // Accept any input in a modal context - modals are likely verification forms
+        const maxLength = input.maxLength;
+        const isLikelyCodeInput = (maxLength >= 1 && maxLength <= 10) || 
+                                   input.inputMode === 'numeric' ||
+                                   input.pattern?.includes('\\d') ||
+                                   input.type === 'tel' ||
+                                   input.type === 'number';
+        
+        // In a modal, be more lenient - any text input could be the code field
+        if (isLikelyCodeInput || !input.value) {
+          return { type: 'single', element: input };
+        }
+      }
+    }
+    
     return null;
   }
 
@@ -482,21 +514,31 @@
       setTimeout(() => checkAndFill(true), 300);
     });
     
+    // Watch for modals/dialogs appearing anywhere in the DOM
+    watchForModals();
+    
     // Also listen for clicks on the page (user might click on input after switching)
     document.addEventListener('click', (e) => {
       const target = e.target;
       if (target.tagName === 'INPUT') {
-        // Check if this might be an OTP field that we should fill
+        // ALWAYS try to fill when user clicks an input - be aggressive
         setTimeout(() => {
           if (!isExtensionValid()) return;
           try {
             chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
               if (chrome.runtime.lastError) return;
               if (response && response.code && response.autoPasteEnabled) {
-                const otpInputs = findOTPInputs();
-                if (otpInputs && !currentCode) {
-                  currentCode = response.code;
-                  fillCode(response.code);
+                // Force fill the clicked input if it looks like an OTP field
+                const input = target;
+                if (isLikelyOTPInput(input)) {
+                  fillInputDirectly(input, response.code);
+                } else {
+                  // Try normal detection
+                  const otpInputs = findOTPInputs();
+                  if (otpInputs) {
+                    currentCode = response.code;
+                    fillCode(response.code);
+                  }
                 }
               }
             });
@@ -506,6 +548,115 @@
         }, 100);
       }
     }, { passive: true });
+    
+    // Listen for focus events on inputs (more reliable than click for some modals)
+    document.addEventListener('focusin', (e) => {
+      const target = e.target;
+      if (target.tagName === 'INPUT' && isLikelyOTPInput(target)) {
+        setTimeout(() => {
+          if (!isExtensionValid()) return;
+          try {
+            chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
+              if (chrome.runtime.lastError) return;
+              if (response && response.code && response.autoPasteEnabled && !target.value) {
+                fillInputDirectly(target, response.code);
+              }
+            });
+          } catch (e) {}
+        }, 50);
+      }
+    }, { passive: true });
+  }
+  
+  function isLikelyOTPInput(input) {
+    if (!input || input.tagName !== 'INPUT') return false;
+    if (input.disabled || input.readOnly) return false;
+    
+    const type = input.type || 'text';
+    if (!['text', 'tel', 'number', ''].includes(type)) return false;
+    
+    // Check various attributes
+    const maxLength = input.maxLength;
+    const name = (input.name || '').toLowerCase();
+    const id = (input.id || '').toLowerCase();
+    const className = (input.className || '').toLowerCase();
+    const placeholder = (input.placeholder || '').toLowerCase();
+    const ariaLabel = (input.getAttribute('aria-label') || '').toLowerCase();
+    
+    // Check if it looks like an OTP input
+    const codeKeywords = ['code', 'otp', 'verify', 'pin', 'digit', 'token', 'mfa', '2fa', 'confirmation'];
+    const hasKeyword = codeKeywords.some(kw => 
+      name.includes(kw) || id.includes(kw) || className.includes(kw) || 
+      placeholder.includes(kw) || ariaLabel.includes(kw)
+    );
+    
+    // Short maxlength is a strong indicator
+    const hasShortMaxLength = maxLength >= 1 && maxLength <= 10;
+    
+    // Numeric input mode
+    const isNumeric = input.inputMode === 'numeric' || input.inputMode === 'tel' || type === 'tel' || type === 'number';
+    
+    // Is it inside a modal/dialog?
+    const isInModal = !!input.closest('[role="dialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="popup" i]');
+    
+    return hasKeyword || hasShortMaxLength || isNumeric || isInModal;
+  }
+  
+  function fillInputDirectly(input, code) {
+    if (!input || input.value) return; // Don't overwrite existing value
+    
+    input.focus();
+    
+    // Set value using native setter for React/Vue compatibility
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    nativeInputValueSetter.call(input, code);
+    input.value = code;
+    
+    triggerInputEvents(input);
+    showFilledNotification(code);
+    
+    // Tell background script the code was used
+    if (isExtensionValid()) {
+      try {
+        chrome.runtime.sendMessage({ type: 'CODE_USED' });
+      } catch (e) {}
+    }
+  }
+  
+  function watchForModals() {
+    // Watch for modal/dialog elements appearing
+    const modalObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node.nodeType !== Node.ELEMENT_NODE) continue;
+          
+          // Check if the added node is or contains a modal
+          const isModal = MODAL_SELECTORS.some(sel => {
+            try {
+              return node.matches && node.matches(sel);
+            } catch (e) { return false; }
+          });
+          
+          const containsModal = MODAL_SELECTORS.some(sel => {
+            try {
+              return node.querySelector && node.querySelector(sel);
+            } catch (e) { return false; }
+          });
+          
+          if (isModal || containsModal) {
+            // Modal appeared - try to fill with delay to let it render
+            setTimeout(() => checkAndFill(true), 100);
+            setTimeout(() => checkAndFill(true), 300);
+            setTimeout(() => checkAndFill(true), 500);
+          }
+        }
+      }
+    });
+    
+    modalObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
   }
 
   // Initialize
