@@ -135,7 +135,7 @@
     let subject = '';
 
     if (provider === 'gmail') {
-      // Gmail email body
+      // Gmail email body (when email is open)
       const emailBody = document.querySelector('.a3s.aiL') || 
                         document.querySelector('[role="main"] .ii.gt') ||
                         document.querySelector('.gs .ii.gt');
@@ -149,10 +149,25 @@
       if (subjectEl) {
         subject = subjectEl.textContent || '';
       }
+      
+      // Gmail email preview snippets (visible in inbox list without opening)
+      if (!content) {
+        const previewSnippets = document.querySelectorAll('.y2, .xT .y2, span.bog, .xS .xT span, .zA .y2');
+        previewSnippets.forEach(snippet => {
+          content += ' ' + (snippet.textContent || '');
+        });
+        
+        // Also grab subject lines from inbox
+        const subjectLines = document.querySelectorAll('.bqe, .bog, .xT span.y2');
+        subjectLines.forEach(subj => {
+          subject += ' ' + (subj.textContent || '');
+        });
+      }
     } else if (provider === 'outlook') {
-      // Outlook email body
+      // Outlook email body (when email is open)
       const emailBody = document.querySelector('[role="main"] .XbIp4') ||
-                        document.querySelector('.customScrollBar');
+                        document.querySelector('.customScrollBar') ||
+                        document.querySelector('[data-app-section="ConversationContainer"]');
       if (emailBody) {
         content = emailBody.textContent || '';
       }
@@ -162,12 +177,37 @@
       if (subjectEl) {
         subject = subjectEl.textContent || '';
       }
+      
+      // Outlook email preview snippets (visible in inbox list)
+      if (!content) {
+        const previewSnippets = document.querySelectorAll(
+          '[aria-label*="message"] .jGG6V, ' +
+          '[data-focuszone-id] .XG5Jd, ' +
+          '.hcptT, .OZZZK, ' +
+          '[role="option"] span'
+        );
+        previewSnippets.forEach(snippet => {
+          content += ' ' + (snippet.textContent || '');
+        });
+      }
     } else if (provider === 'yahoo') {
-      // Yahoo email body
+      // Yahoo email body (when email is open)
       const emailBody = document.querySelector('.msg-body') ||
                         document.querySelector('[data-test-id="message-view-body"]');
       if (emailBody) {
         content = emailBody.textContent || '';
+      }
+      
+      // Yahoo email preview snippets (visible in inbox list)
+      if (!content) {
+        const previewSnippets = document.querySelectorAll(
+          '[data-test-id="message-list-item"] span, ' +
+          '.D_F.W_6h8.Z_0I.H_28Wy, ' +
+          '[data-test-id="snippet"]'
+        );
+        previewSnippets.forEach(snippet => {
+          content += ' ' + (snippet.textContent || '');
+        });
       }
     }
 
