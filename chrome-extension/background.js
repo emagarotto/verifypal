@@ -22,9 +22,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function handleCodeDetected(code, source) {
-  // Get current history
-  const data = await chrome.storage.local.get(['codeHistory']);
+  // Get current history and check if code was already detected
+  const data = await chrome.storage.local.get(['codeHistory', 'detectedCodes']);
   const history = data.codeHistory || [];
+  const detectedCodes = data.detectedCodes || [];
+  
+  // Check if this code was already detected - skip if duplicate
+  if (detectedCodes.includes(code)) {
+    return; // Code already detected, don't process again
+  }
+  
+  // Add code to detected list (keep last 50 to prevent memory bloat)
+  detectedCodes.unshift(code);
+  const trimmedDetected = detectedCodes.slice(0, 50);
   
   // Add to history
   history.unshift({
@@ -33,7 +43,7 @@ async function handleCodeDetected(code, source) {
     timestamp: Date.now()
   });
   
-  // Keep only last 10 codes
+  // Keep only last 10 codes in visible history
   const trimmedHistory = history.slice(0, 10);
   
   // Store the code
@@ -41,7 +51,8 @@ async function handleCodeDetected(code, source) {
     currentCode: code,
     codeSource: source,
     codeTimestamp: Date.now(),
-    codeHistory: trimmedHistory
+    codeHistory: trimmedHistory,
+    detectedCodes: trimmedDetected
   });
   
   // Show notification badge
@@ -71,6 +82,7 @@ async function handleCodeDetected(code, source) {
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.set({
     autoPasteEnabled: true,
-    codeHistory: []
+    codeHistory: [],
+    detectedCodes: []
   });
 });
