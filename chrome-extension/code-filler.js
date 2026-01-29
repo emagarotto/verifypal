@@ -179,10 +179,12 @@
     chrome.runtime.sendMessage({ type: 'CODE_USED' });
   }
 
-  function checkAndFill() {
+  function checkAndFill(forceRetry = false) {
     chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
       if (response && response.code && response.autoPasteEnabled) {
-        if (response.code !== currentCode) {
+        // Fill if it's a new code OR if forceRetry is true (e.g., tab switched)
+        if (response.code !== currentCode || forceRetry) {
+          const previousCode = currentCode;
           currentCode = response.code;
           
           // Try to fill the code
@@ -237,6 +239,38 @@
   // Check for existing code on page load
   function init() {
     setTimeout(checkAndFill, 1000);
+    
+    // Re-check when tab becomes visible (user switches back to this tab)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        // Small delay to let the page settle, force retry even if same code
+        setTimeout(() => checkAndFill(true), 300);
+      }
+    });
+    
+    // Re-check when window gains focus
+    window.addEventListener('focus', () => {
+      setTimeout(() => checkAndFill(true), 300);
+    });
+    
+    // Also listen for clicks on the page (user might click on input after switching)
+    document.addEventListener('click', (e) => {
+      const target = e.target;
+      if (target.tagName === 'INPUT') {
+        // Check if this might be an OTP field that we should fill
+        setTimeout(() => {
+          chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
+            if (response && response.code && response.autoPasteEnabled) {
+              const otpInputs = findOTPInputs();
+              if (otpInputs && !currentCode) {
+                currentCode = response.code;
+                fillCode(response.code);
+              }
+            }
+          });
+        }, 100);
+      }
+    }, { passive: true });
   }
 
   // Initialize
