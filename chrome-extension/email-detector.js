@@ -5,6 +5,11 @@
 
   // Specific patterns that directly capture codes after common phrases
   const DIRECT_CODE_PATTERNS = [
+    // "Your activation code is: 123456"
+    /(?:your\s+activation\s+code\s+is[:\s]*)\s*(\d{4,8})/gi,
+    /(?:your\s+activation\s+code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
+    /(?:activation\s+code[:\s]*)\s*(\d{4,8})/gi,
+    /(?:activation\s+code[:\s]*)\s*([A-Z0-9]{4,8})/gi,
     // "Your code is: 123456" or "Your code is 123456"
     /(?:your\s+(?:verification\s+)?code\s+is[:\s]*)\s*(\d{4,8})/gi,
     /(?:your\s+(?:verification\s+)?code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
@@ -49,6 +54,7 @@
 
   // Keywords that indicate a verification code context
   const CONTEXT_KEYWORDS = [
+    'activation code',
     'verification code',
     'verify your',
     'confirm your',
