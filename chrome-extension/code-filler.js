@@ -18,6 +18,8 @@
     'input[name*="totp" i]',
     'input[name*="passcode" i]',
     'input[name*="activation" i]',
+    'input[name*="confirmation" i]',
+    'input[name*="security" i]',
     // ID attributes
     'input[id*="otp" i]',
     'input[id*="code" i]',
@@ -29,11 +31,15 @@
     'input[id*="totp" i]',
     'input[id*="passcode" i]',
     'input[id*="activation" i]',
+    'input[id*="confirmation" i]',
+    'input[id*="security" i]',
     // Class attributes
     'input[class*="otp" i]',
     'input[class*="code" i]',
     'input[class*="verify" i]',
     'input[class*="pin" i]',
+    'input[class*="digit" i]',
+    'input[class*="confirmation" i]',
     // Input mode and type combinations
     'input[inputmode="numeric"]',
     'input[inputmode="tel"]',
@@ -57,16 +63,41 @@
     'input[aria-label*="verification" i]',
     'input[aria-label*="otp" i]',
     'input[aria-label*="pin" i]',
+    'input[aria-label*="digit" i]',
+    'input[aria-label*="character" i]',
     // Placeholders
     'input[placeholder*="code" i]',
     'input[placeholder*="verification" i]',
     'input[placeholder*="OTP" i]',
     'input[placeholder*="enter" i][placeholder*="digit" i]',
     'input[placeholder*="digit" i]',
+    'input[placeholder*="000000"]',
+    'input[placeholder*="------"]',
+    'input[placeholder*="••••••"]',
     // Data attributes (common in React/Vue apps)
     'input[data-testid*="code" i]',
     'input[data-testid*="otp" i]',
-    'input[data-testid*="verify" i]'
+    'input[data-testid*="verify" i]',
+    'input[data-testid*="pin" i]',
+    'input[data-testid*="digit" i]'
+  ];
+
+  // Modal/dialog container selectors to prioritize searching within
+  const MODAL_SELECTORS = [
+    '[role="dialog"]',
+    '[role="alertdialog"]',
+    '[aria-modal="true"]',
+    '.modal',
+    '.dialog',
+    '.popup',
+    '.overlay',
+    '[class*="modal" i]',
+    '[class*="dialog" i]',
+    '[class*="popup" i]',
+    '[class*="overlay" i]',
+    '[id*="modal" i]',
+    '[id*="dialog" i]',
+    '[id*="popup" i]'
   ];
 
   // Patterns to identify OTP input groups (multiple single-digit inputs)
@@ -78,8 +109,59 @@
 
   let currentCode = null;
 
+  function findOTPInModals() {
+    // Find open modals/dialogs - prioritize these for verification popups
+    for (const modalSelector of MODAL_SELECTORS) {
+      try {
+        const modals = document.querySelectorAll(modalSelector);
+        for (const modal of modals) {
+          if (!isVisible(modal)) continue;
+          
+          // Look for OTP inputs inside the modal
+          for (const selector of OTP_SELECTORS) {
+            try {
+              const input = modal.querySelector(selector);
+              if (input && isVisible(input) && !input.disabled && !input.readOnly) {
+                return { type: 'single', element: input };
+              }
+            } catch (e) {}
+          }
+          
+          // Look for single-digit inputs inside modal
+          for (const selector of SINGLE_DIGIT_SELECTORS) {
+            const inputs = modal.querySelectorAll(selector);
+            const visibleInputs = Array.from(inputs).filter(input => 
+              isVisible(input) && !input.disabled && !input.readOnly
+            );
+            
+            if (visibleInputs.length >= 4 && visibleInputs.length <= 8) {
+              return { type: 'multiple', elements: visibleInputs };
+            }
+          }
+          
+          // Fallback: any empty text/number input in the modal that looks like a code field
+          const allInputs = modal.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input:not([type])');
+          for (const input of allInputs) {
+            if (isVisible(input) && !input.disabled && !input.readOnly && !input.value) {
+              // Check if it looks like a code input (short maxlength or numeric pattern)
+              const maxLength = input.maxLength;
+              if ((maxLength >= 4 && maxLength <= 8) || input.inputMode === 'numeric') {
+                return { type: 'single', element: input };
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+    return null;
+  }
+
   function findOTPInputs() {
-    // First, check for single input fields using specific selectors
+    // FIRST: Check inside modals/dialogs (higher priority for popup verification)
+    const modalResult = findOTPInModals();
+    if (modalResult) return modalResult;
+
+    // SECOND: Check for single input fields using specific selectors
     for (const selector of OTP_SELECTORS) {
       try {
         const input = document.querySelector(selector);
