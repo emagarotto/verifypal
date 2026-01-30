@@ -97,8 +97,33 @@
     '[class*="overlay" i]',
     '[id*="modal" i]',
     '[id*="dialog" i]',
-    '[id*="popup" i]'
+    '[id*="popup" i]',
+    // OpenTable and other specific selectors
+    '[class*="ReactModal" i]',
+    '[class*="MuiModal" i]',
+    '[class*="MuiDialog" i]',
+    '[data-testid*="modal" i]',
+    '[data-testid*="dialog" i]',
+    'div[style*="position: fixed"]',
+    'div[style*="position:fixed"]',
+    // Portal containers often used by React
+    '#portal',
+    '#modal-root',
+    '#dialog-root',
+    '[id*="portal" i]',
+    // High z-index elements are often modals
+    'div[style*="z-index: 9"]',
+    'div[style*="z-index:9"]'
   ];
+  
+  // Debug mode - set to true to see console logs
+  const DEBUG = true;
+  
+  function debugLog(...args) {
+    if (DEBUG) {
+      console.log('[CodePaste]', ...args);
+    }
+  }
 
   // Patterns to identify OTP input groups (multiple single-digit inputs)
   const SINGLE_DIGIT_SELECTORS = [
@@ -110,6 +135,8 @@
   let currentCode = null;
 
   function findOTPInModals() {
+    debugLog('Searching for OTP inputs in modals...');
+    
     // Find open modals/dialogs - prioritize these for verification popups
     for (const modalSelector of MODAL_SELECTORS) {
       try {
@@ -117,12 +144,105 @@
         for (const modal of modals) {
           if (!isVisible(modal)) continue;
           
+          debugLog('Found visible modal:', modalSelector, modal);
+          
           // Search in modal and any shadow roots
           const result = searchInElementAndShadow(modal);
-          if (result) return result;
+          if (result) {
+            debugLog('Found OTP input in modal:', result);
+            return result;
+          }
         }
       } catch (e) {}
     }
+    
+    // Also check iframes (some sites use iframes for verification)
+    const iframes = document.querySelectorAll('iframe');
+    for (const iframe of iframes) {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (iframeDoc) {
+          const result = searchForOTPInputs(iframeDoc);
+          if (result) {
+            debugLog('Found OTP input in iframe:', result);
+            return result;
+          }
+        }
+      } catch (e) {
+        // Cross-origin iframe, can't access
+      }
+    }
+    
+    return null;
+  }
+  
+  // Aggressive search - find ANY text input that could be a verification field
+  function findAnyPotentialOTPInput() {
+    debugLog('Aggressive search for any potential OTP input...');
+    
+    // Get all visible text/number inputs on the page
+    const allInputs = document.querySelectorAll('input');
+    const candidates = [];
+    
+    for (const input of allInputs) {
+      const type = (input.type || 'text').toLowerCase();
+      
+      // Skip obviously wrong types
+      if (['hidden', 'submit', 'button', 'checkbox', 'radio', 'file', 'image', 'reset', 'password', 'email'].includes(type)) {
+        continue;
+      }
+      
+      if (!isVisible(input) || input.disabled || input.readOnly) continue;
+      if (input.value) continue; // Already has a value
+      
+      // Score the input based on likelihood of being an OTP field
+      let score = 0;
+      const name = (input.name || '').toLowerCase();
+      const id = (input.id || '').toLowerCase();
+      const className = (input.className || '').toLowerCase();
+      const placeholder = (input.placeholder || '').toLowerCase();
+      const maxLength = input.maxLength;
+      
+      // Positive indicators
+      if (maxLength >= 4 && maxLength <= 8) score += 5;
+      if (maxLength === 6) score += 3; // Most common OTP length
+      if (input.inputMode === 'numeric') score += 4;
+      if (type === 'tel' || type === 'number') score += 3;
+      
+      const otpKeywords = ['code', 'otp', 'verify', 'pin', 'digit', 'token', '2fa', 'mfa'];
+      for (const kw of otpKeywords) {
+        if (name.includes(kw) || id.includes(kw) || className.includes(kw) || placeholder.includes(kw)) {
+          score += 5;
+        }
+      }
+      
+      // Check context
+      const container = input.closest('form, div, section');
+      const contextText = (container?.textContent || '').toLowerCase();
+      const contextKeywords = ['verification', 'verify', 'code', 'sent', 'email', 'phone', 'enter', 'digit'];
+      for (const kw of contextKeywords) {
+        if (contextText.includes(kw)) score += 1;
+      }
+      
+      // Negative indicators (but not disqualifying)
+      const negativeKeywords = ['search', 'email', 'password', 'name', 'address'];
+      for (const kw of negativeKeywords) {
+        if (name.includes(kw) || id.includes(kw)) score -= 3;
+      }
+      
+      if (score > 0) {
+        candidates.push({ input, score });
+      }
+    }
+    
+    // Sort by score and return the best candidate
+    candidates.sort((a, b) => b.score - a.score);
+    
+    if (candidates.length > 0) {
+      debugLog('Best OTP candidate:', candidates[0]);
+      return { type: 'single', element: candidates[0].input };
+    }
+    
     return null;
   }
 
@@ -288,10 +408,18 @@
     if (focused && focused.tagName === 'INPUT' && isVisible(focused) && !focused.disabled && !isExcludedInputBasic(focused)) {
       const inputType = focused.type || 'text';
       if (['text', 'tel', 'number'].includes(inputType)) {
+        debugLog('Using focused input as fallback');
         return { type: 'single', element: focused };
       }
     }
+    
+    // Ultimate fallback: aggressive search for any potential OTP input
+    const aggressiveResult = findAnyPotentialOTPInput();
+    if (aggressiveResult) {
+      return aggressiveResult;
+    }
 
+    debugLog('No OTP inputs found');
     return null;
   }
 
@@ -552,29 +680,33 @@
     document.addEventListener('click', (e) => {
       const target = e.target;
       if (target.tagName === 'INPUT') {
-        // ALWAYS try to fill when user clicks an input - be aggressive
+        debugLog('Input clicked:', target);
+        // ALWAYS try to fill when user clicks an input - be very aggressive
         setTimeout(() => {
           if (!isExtensionValid()) return;
           try {
             chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
               if (chrome.runtime.lastError) return;
               if (response && response.code && response.autoPasteEnabled) {
-                // Force fill the clicked input if it looks like an OTP field
+                debugLog('Have code to fill:', response.code);
                 const input = target;
-                if (isLikelyOTPInput(input)) {
+                const type = (input.type || 'text').toLowerCase();
+                
+                // Skip only explicitly wrong types
+                if (['password', 'email', 'hidden', 'submit', 'button', 'checkbox', 'radio', 'file'].includes(type)) {
+                  debugLog('Skipping input type:', type);
+                  return;
+                }
+                
+                // If input is empty and visible, try to fill it
+                if (!input.value && isVisible(input) && !input.disabled && !input.readOnly) {
+                  debugLog('Filling clicked input directly');
                   fillInputDirectly(input, response.code);
-                } else {
-                  // Try normal detection
-                  const otpInputs = findOTPInputs();
-                  if (otpInputs) {
-                    currentCode = response.code;
-                    fillCode(response.code);
-                  }
                 }
               }
             });
           } catch (e) {
-            // Extension context invalidated
+            debugLog('Error:', e);
           }
         }, 100);
       }
@@ -583,13 +715,22 @@
     // Listen for focus events on inputs (more reliable than click for some modals)
     document.addEventListener('focusin', (e) => {
       const target = e.target;
-      if (target.tagName === 'INPUT' && isLikelyOTPInput(target)) {
+      if (target.tagName === 'INPUT') {
+        debugLog('Input focused:', target);
+        const type = (target.type || 'text').toLowerCase();
+        
+        // Skip only explicitly wrong types
+        if (['password', 'email', 'hidden', 'submit', 'button', 'checkbox', 'radio', 'file'].includes(type)) {
+          return;
+        }
+        
         setTimeout(() => {
           if (!isExtensionValid()) return;
           try {
             chrome.runtime.sendMessage({ type: 'GET_CODE' }, (response) => {
               if (chrome.runtime.lastError) return;
               if (response && response.code && response.autoPasteEnabled && !target.value) {
+                debugLog('Filling focused input directly');
                 fillInputDirectly(target, response.code);
               }
             });
