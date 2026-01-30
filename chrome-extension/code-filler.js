@@ -148,7 +148,7 @@
     for (const selector of OTP_SELECTORS) {
       try {
         const input = container.querySelector(selector);
-        if (input && isVisible(input) && !input.disabled && !input.readOnly) {
+        if (input && isVisible(input) && !input.disabled && !input.readOnly && !isExcludedInputBasic(input)) {
           return { type: 'single', element: input };
         }
       } catch (e) {}
@@ -158,7 +158,7 @@
     for (const selector of SINGLE_DIGIT_SELECTORS) {
       const inputs = container.querySelectorAll(selector);
       const visibleInputs = Array.from(inputs).filter(input => 
-        isVisible(input) && !input.disabled && !input.readOnly
+        isVisible(input) && !input.disabled && !input.readOnly && !isExcludedInputBasic(input)
       );
       
       if (visibleInputs.length >= 4 && visibleInputs.length <= 8) {
@@ -166,26 +166,54 @@
       }
     }
     
-    // Fallback: any visible text/number input in the container
+    // Fallback: any visible text/number input in the container that's not excluded
     const allInputs = container.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input:not([type])');
     for (const input of allInputs) {
-      if (isVisible(input) && !input.disabled && !input.readOnly) {
-        // Accept any input in a modal context - modals are likely verification forms
+      if (isVisible(input) && !input.disabled && !input.readOnly && !isExcludedInputBasic(input)) {
+        // Accept input if it looks like a code field
         const maxLength = input.maxLength;
-        const isLikelyCodeInput = (maxLength >= 1 && maxLength <= 10) || 
+        const isLikelyCodeInput = (maxLength >= 4 && maxLength <= 8) || 
                                    input.inputMode === 'numeric' ||
                                    input.pattern?.includes('\\d') ||
                                    input.type === 'tel' ||
                                    input.type === 'number';
         
-        // In a modal, be more lenient - any text input could be the code field
-        if (isLikelyCodeInput || !input.value) {
+        // Only accept if it looks like a code input
+        if (isLikelyCodeInput && !input.value) {
           return { type: 'single', element: input };
         }
       }
     }
     
     return null;
+  }
+  
+  // Basic exclusion check (lightweight version for hot path)
+  function isExcludedInputBasic(input) {
+    if (!input) return true;
+    
+    const type = (input.type || '').toLowerCase();
+    
+    // Always exclude these types
+    if (type === 'password' || type === 'email' || type === 'search') return true;
+    
+    const name = (input.name || '').toLowerCase();
+    const id = (input.id || '').toLowerCase();
+    const autocomplete = (input.autocomplete || '').toLowerCase();
+    
+    // Quick exclusion checks
+    const quickExclude = ['password', 'email', 'username', 'name', 'address', 'phone', 'search'];
+    for (const kw of quickExclude) {
+      if (name.includes(kw) || id.includes(kw) || autocomplete.includes(kw)) {
+        // But allow if it also has OTP indicators
+        if (name.includes('code') || id.includes('code') || name.includes('otp') || id.includes('otp')) {
+          return false;
+        }
+        return true;
+      }
+    }
+    
+    return false;
   }
 
   function findOTPInputs() {
@@ -232,6 +260,9 @@
     // Fallback: Look for any visible, empty text/number input that could be a code field
     const allInputs = document.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input:not([type])');
     for (const input of allInputs) {
+      // Skip excluded inputs (password, email, search, etc.)
+      if (isExcludedInputBasic(input)) continue;
+      
       if (isVisible(input) && !input.disabled && !input.readOnly && !input.value) {
         // Check if it's in a form that looks like a verification form
         const form = input.closest('form');
@@ -254,7 +285,7 @@
 
     // Last resort: check if there's a focused input that could be a code field
     const focused = document.activeElement;
-    if (focused && focused.tagName === 'INPUT' && isVisible(focused) && !focused.disabled) {
+    if (focused && focused.tagName === 'INPUT' && isVisible(focused) && !focused.disabled && !isExcludedInputBasic(focused)) {
       const inputType = focused.type || 'text';
       if (['text', 'tel', 'number'].includes(inputType)) {
         return { type: 'single', element: focused };
@@ -568,9 +599,68 @@
     }, { passive: true });
   }
   
+  // Check if input should be excluded (password, email, search, etc.)
+  function isExcludedInput(input) {
+    if (!input) return true;
+    
+    const type = (input.type || '').toLowerCase();
+    const name = (input.name || '').toLowerCase();
+    const id = (input.id || '').toLowerCase();
+    const className = (input.className || '').toLowerCase();
+    const placeholder = (input.placeholder || '').toLowerCase();
+    const ariaLabel = (input.getAttribute('aria-label') || '').toLowerCase();
+    const autocomplete = (input.autocomplete || '').toLowerCase();
+    
+    // Exclude password fields
+    if (type === 'password') return true;
+    
+    // Exclude email fields
+    if (type === 'email') return true;
+    if (autocomplete.includes('email')) return true;
+    
+    // Exclude search fields
+    if (type === 'search') return true;
+    if (name.includes('search') || id.includes('search') || placeholder.includes('search')) return true;
+    
+    // Exclude common non-OTP field patterns
+    const excludeKeywords = [
+      'password', 'passwd', 'pwd', 'pass',
+      'email', 'mail', 'e-mail',
+      'username', 'user', 'login', 'signin',
+      'firstname', 'first_name', 'first-name', 'fname',
+      'lastname', 'last_name', 'last-name', 'lname',
+      'fullname', 'full_name', 'full-name', 'name',
+      'address', 'street', 'city', 'state', 'zip', 'postal', 'country',
+      'phone', 'mobile', 'telephone', 'cell',
+      'card', 'credit', 'cvv', 'cvc', 'expir',
+      'date', 'birthday', 'dob', 'birth',
+      'comment', 'message', 'note', 'description', 'bio',
+      'company', 'organization', 'website', 'url',
+      'search', 'query', 'filter', 'keyword'
+    ];
+    
+    const allText = `${name} ${id} ${className} ${placeholder} ${ariaLabel} ${autocomplete}`;
+    
+    // Check for exclude keywords, but allow if it also has OTP keywords
+    const otpKeywords = ['code', 'otp', 'verify', 'verification', 'token', 'mfa', '2fa', 'totp', 'digit'];
+    const hasOTPKeyword = otpKeywords.some(kw => allText.includes(kw));
+    
+    if (hasOTPKeyword) return false; // OTP keyword takes priority
+    
+    // Check for excluded patterns
+    for (const keyword of excludeKeywords) {
+      if (allText.includes(keyword)) return true;
+    }
+    
+    return false;
+  }
+  
   function isLikelyOTPInput(input) {
     if (!input || input.tagName !== 'INPUT') return false;
     if (input.disabled || input.readOnly) return false;
+    
+    // First check if this is an excluded field type
+    if (isExcludedInput(input)) return false;
     
     const type = input.type || 'text';
     if (!['text', 'tel', 'number', ''].includes(type)) return false;
@@ -590,16 +680,21 @@
       placeholder.includes(kw) || ariaLabel.includes(kw)
     );
     
-    // Short maxlength is a strong indicator
-    const hasShortMaxLength = maxLength >= 1 && maxLength <= 10;
+    // Short maxlength is a strong indicator (but only if not excluded)
+    const hasShortMaxLength = maxLength >= 4 && maxLength <= 8; // Narrowed range for safety
     
     // Numeric input mode
     const isNumeric = input.inputMode === 'numeric' || input.inputMode === 'tel' || type === 'tel' || type === 'number';
     
-    // Is it inside a modal/dialog?
+    // Is it inside a modal/dialog with verification context?
     const isInModal = !!input.closest('[role="dialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="popup" i]');
     
-    return hasKeyword || hasShortMaxLength || isNumeric || isInModal;
+    // For modal inputs, require at least one positive indicator
+    if (isInModal) {
+      return hasKeyword || hasShortMaxLength || isNumeric;
+    }
+    
+    return hasKeyword || (hasShortMaxLength && isNumeric);
   }
   
   function fillInputDirectly(input, code) {
