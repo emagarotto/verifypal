@@ -295,7 +295,40 @@
     return null;
   }
 
+  // Common English words that should never be detected as codes
+  const EXCLUDED_WORDS = new Set([
+    // Common words that might match alphanumeric patterns
+    'your', 'code', 'your code', 'here', 'this', 'that', 'with', 'from', 'have', 'been',
+    'will', 'more', 'when', 'some', 'only', 'also', 'back', 'them', 'then', 'than',
+    'into', 'just', 'over', 'such', 'take', 'come', 'make', 'like', 'time', 'very',
+    'after', 'most', 'know', 'first', 'last', 'good', 'want', 'give', 'made', 'find',
+    'here', 'these', 'those', 'other', 'about', 'which', 'their', 'there', 'where',
+    'would', 'could', 'should', 'being', 'using', 'enter', 'below', 'above', 'click',
+    'email', 'phone', 'login', 'signin', 'signup', 'reset', 'account', 'verify',
+    'please', 'thanks', 'thank', 'hello', 'dear', 'welcome', 'regards', 'sincerely',
+    // Days, months
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+    'january', 'february', 'march', 'april', 'june', 'july', 'august', 'september',
+    'october', 'november', 'december',
+    // Common abbreviations that are NOT codes
+    'http', 'https', 'www', 'com', 'org', 'net', 'gov', 'edu',
+    // Other common non-code patterns
+    'password', 'username', 'user', 'pass', 'word'
+  ]);
+
   function isValidCode(code) {
+    if (!code) return false;
+    
+    // Must be at least 4 characters
+    if (code.length < 4) return false;
+    
+    // Exclude common English words (case-insensitive)
+    if (EXCLUDED_WORDS.has(code.toLowerCase())) return false;
+    
+    // Alphanumeric codes should have at least one digit
+    // Pure letter codes like "YOUR", "CODE" are likely words, not codes
+    if (/^[A-Za-z]+$/.test(code)) return false;
+    
     // Exclude common non-code patterns
     if (/^(19|20)\d{2}$/.test(code)) return false; // Years like 2024
     if (/^0{4,}$/.test(code)) return false; // All zeros
@@ -304,7 +337,24 @@
     if (/^(12345678|87654321|123456|654321)$/.test(code)) return false; // Sequential
     if (/^(00000000|11111111|99999999)$/.test(code)) return false; // All same
     
-    return true;
+    // Valid codes are either:
+    // 1. All digits (most common: 4-8 digit numeric codes)
+    // 2. Alphanumeric with at least one digit AND one letter
+    const hasDigit = /\d/.test(code);
+    const hasLetter = /[A-Za-z]/.test(code);
+    const isAllDigits = /^\d+$/.test(code);
+    
+    // Pure numeric codes are most reliable
+    if (isAllDigits && code.length >= 4 && code.length <= 8) {
+      return true;
+    }
+    
+    // Alphanumeric codes must have both digits and letters
+    if (hasDigit && hasLetter && code.length >= 4 && code.length <= 8) {
+      return true;
+    }
+    
+    return false;
   }
 
   function isExtensionValid() {
