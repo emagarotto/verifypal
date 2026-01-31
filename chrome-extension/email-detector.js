@@ -214,7 +214,8 @@
     const provider = detectEmailProvider();
     let content = '';
     let subject = '';
-    let emailTimestamp = getEmailTimestamp();
+    let emailTimestamp = null;
+    let isOpenedEmail = false; // Track if we're viewing an opened email vs inbox preview
 
     if (provider === 'gmail') {
       // Gmail email body (when email is open)
@@ -223,6 +224,9 @@
                         document.querySelector('.gs .ii.gt');
       if (emailBody) {
         content = emailBody.textContent || '';
+        isOpenedEmail = true;
+        // Only get timestamp for opened emails
+        emailTimestamp = getEmailTimestamp();
       }
       
       // Gmail subject
@@ -233,6 +237,7 @@
       }
       
       // Gmail email preview snippets (visible in inbox list without opening)
+      // Don't check timestamp for inbox previews since we're scanning multiple emails
       if (!content) {
         const previewSnippets = document.querySelectorAll('.y2, .xT .y2, span.bog, .xS .xT span, .zA .y2');
         previewSnippets.forEach(snippet => {
@@ -244,6 +249,8 @@
         subjectLines.forEach(subj => {
           subject += ' ' + (subj.textContent || '');
         });
+        // No timestamp check for inbox previews - we can't reliably attribute timestamps
+        emailTimestamp = null;
       }
     } else if (provider === 'outlook') {
       // Outlook email body (when email is open)
@@ -252,6 +259,8 @@
                         document.querySelector('[data-app-section="ConversationContainer"]');
       if (emailBody) {
         content = emailBody.textContent || '';
+        isOpenedEmail = true;
+        emailTimestamp = getEmailTimestamp();
       }
       
       // Outlook subject
@@ -271,6 +280,7 @@
         previewSnippets.forEach(snippet => {
           content += ' ' + (snippet.textContent || '');
         });
+        emailTimestamp = null; // No timestamp for inbox previews
       }
     } else if (provider === 'yahoo') {
       // Yahoo email body (when email is open)
@@ -278,6 +288,8 @@
                         document.querySelector('[data-test-id="message-view-body"]');
       if (emailBody) {
         content = emailBody.textContent || '';
+        isOpenedEmail = true;
+        emailTimestamp = getEmailTimestamp();
       }
       
       // Yahoo email preview snippets (visible in inbox list)
@@ -290,6 +302,7 @@
         previewSnippets.forEach(snippet => {
           content += ' ' + (snippet.textContent || '');
         });
+        emailTimestamp = null; // No timestamp for inbox previews
       }
     }
 
