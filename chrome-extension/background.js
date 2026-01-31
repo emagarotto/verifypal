@@ -6,9 +6,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleCodeDetected(message.code, message.source);
     sendResponse({ success: true });
   } else if (message.type === 'GET_CODE') {
-    chrome.storage.local.get(['currentCode', 'autoPasteEnabled'], (data) => {
+    chrome.storage.local.get(['currentCode', 'codeTimestamp', 'autoPasteEnabled'], (data) => {
+      let code = data.currentCode || null;
+      
+      // Check if code is older than 10 minutes (600000 ms)
+      const TEN_MINUTES = 10 * 60 * 1000;
+      if (code && data.codeTimestamp) {
+        const age = Date.now() - data.codeTimestamp;
+        if (age > TEN_MINUTES) {
+          code = null; // Code expired, don't return it
+        }
+      }
+      
       sendResponse({
-        code: data.currentCode || null,
+        code: code,
         autoPasteEnabled: data.autoPasteEnabled !== false
       });
     });

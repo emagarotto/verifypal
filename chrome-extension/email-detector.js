@@ -129,10 +129,92 @@
     return 'unknown';
   }
 
+  // Parse email timestamp and check if within 10 minutes
+  function getEmailTimestamp() {
+    const provider = detectEmailProvider();
+    let emailTime = null;
+    
+    try {
+      if (provider === 'gmail') {
+        // Gmail shows time in the email header area
+        const timeEl = document.querySelector('.g3') || 
+                       document.querySelector('[data-tooltip*=":"]') ||
+                       document.querySelector('.gH .gK span');
+        if (timeEl) {
+          const timeText = timeEl.getAttribute('data-tooltip') || timeEl.textContent || '';
+          emailTime = parseEmailTime(timeText);
+        }
+      } else if (provider === 'outlook') {
+        // Outlook shows time in the message header
+        const timeEl = document.querySelector('[role="heading"] + div time') ||
+                       document.querySelector('time[datetime]');
+        if (timeEl) {
+          const datetime = timeEl.getAttribute('datetime');
+          if (datetime) {
+            emailTime = new Date(datetime).getTime();
+          }
+        }
+      } else if (provider === 'yahoo') {
+        // Yahoo shows time in message view
+        const timeEl = document.querySelector('[data-test-id="message-time"]') ||
+                       document.querySelector('.date-container time');
+        if (timeEl) {
+          const datetime = timeEl.getAttribute('datetime');
+          if (datetime) {
+            emailTime = new Date(datetime).getTime();
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore timestamp parsing errors
+    }
+    
+    return emailTime;
+  }
+  
+  function parseEmailTime(timeText) {
+    if (!timeText) return null;
+    
+    // Try to parse common time formats
+    const now = new Date();
+    
+    // "10:30 AM" or "2:45 PM" - today
+    const todayMatch = timeText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (todayMatch) {
+      let hours = parseInt(todayMatch[1]);
+      const mins = parseInt(todayMatch[2]);
+      const isPM = todayMatch[3].toUpperCase() === 'PM';
+      if (isPM && hours !== 12) hours += 12;
+      if (!isPM && hours === 12) hours = 0;
+      
+      const time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, mins);
+      return time.getTime();
+    }
+    
+    // "Jan 15" or "Dec 3" - this year but different day (likely old)
+    const dateMatch = timeText.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{1,2})/i);
+    if (dateMatch) {
+      const months = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+      const month = months[dateMatch[1].toLowerCase()];
+      const day = parseInt(dateMatch[2]);
+      const time = new Date(now.getFullYear(), month, day);
+      return time.getTime();
+    }
+    
+    return null;
+  }
+  
+  function isEmailTooOld(emailTimestamp) {
+    if (!emailTimestamp) return false; // If we can't determine, allow it
+    const TEN_MINUTES = 10 * 60 * 1000;
+    return (Date.now() - emailTimestamp) > TEN_MINUTES;
+  }
+
   function getEmailContent() {
     const provider = detectEmailProvider();
     let content = '';
     let subject = '';
+    let emailTimestamp = getEmailTimestamp();
 
     if (provider === 'gmail') {
       // Gmail email body (when email is open)
@@ -211,7 +293,7 @@
       }
     }
 
-    return { content, subject, provider };
+    return { content, subject, provider, emailTimestamp };
   }
 
   function hasVerificationContext(text) {
@@ -368,9 +450,14 @@
   function scanForCode() {
     if (!isExtensionValid()) return;
     
-    const { content, subject, provider } = getEmailContent();
+    const { content, subject, provider, emailTimestamp } = getEmailContent();
     
     if (!content) return;
+    
+    // Skip emails older than 10 minutes
+    if (isEmailTooOld(emailTimestamp)) {
+      return;
+    }
 
     const code = extractVerificationCode(content, subject);
     

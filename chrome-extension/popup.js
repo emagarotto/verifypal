@@ -137,35 +137,52 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   function loadData() {
+    const TEN_MINUTES = 10 * 60 * 1000;
+    
     safeStorageGet(['currentCode', 'codeSource', 'codeTimestamp', 'autoPasteEnabled', 'codeHistory'], (data) => {
       // Load auto-paste setting
       autoPasteToggle.checked = data.autoPasteEnabled !== false;
 
       // Load current code
       if (data.currentCode) {
-        codeValue.textContent = data.currentCode;
-        copyBtn.disabled = false;
+        const isExpired = data.codeTimestamp && (Date.now() - data.codeTimestamp > TEN_MINUTES);
         
-        if (data.codeSource) {
-          codeSource.textContent = `From: ${data.codeSource}`;
-        }
-        
-        if (data.codeTimestamp) {
-          const time = new Date(data.codeTimestamp);
-          const ago = getTimeAgo(time);
-          codeSource.textContent += ` (${ago})`;
+        if (isExpired) {
+          codeValue.innerHTML = `<span style="text-decoration: line-through; opacity: 0.5;">${data.currentCode}</span>`;
+          codeSource.textContent = 'Expired (older than 10 minutes)';
+          codeSource.style.color = '#e53e3e';
+          copyBtn.disabled = true;
+        } else {
+          codeValue.textContent = data.currentCode;
+          copyBtn.disabled = false;
+          codeSource.style.color = '';
+          
+          if (data.codeSource) {
+            codeSource.textContent = `From: ${data.codeSource}`;
+          }
+          
+          if (data.codeTimestamp) {
+            const time = new Date(data.codeTimestamp);
+            const ago = getTimeAgo(time);
+            codeSource.textContent += ` (${ago})`;
+          }
         }
       }
 
-      // Load history
+      // Load history - show expired status for old codes
       if (data.codeHistory && data.codeHistory.length > 0) {
         historySection.style.display = 'block';
-        historyList.innerHTML = data.codeHistory.slice(0, 5).map(item => `
-          <div class="history-item">
-            <span class="history-code">${item.code}</span>
-            <span class="history-time">${getTimeAgo(new Date(item.timestamp))}</span>
-          </div>
-        `).join('');
+        historyList.innerHTML = data.codeHistory.slice(0, 5).map(item => {
+          const isExpired = Date.now() - item.timestamp > TEN_MINUTES;
+          const expiredClass = isExpired ? 'style="opacity: 0.5; text-decoration: line-through;"' : '';
+          const expiredLabel = isExpired ? ' (expired)' : '';
+          return `
+            <div class="history-item">
+              <span class="history-code" ${expiredClass}>${item.code}</span>
+              <span class="history-time">${getTimeAgo(new Date(item.timestamp))}${expiredLabel}</span>
+            </div>
+          `;
+        }).join('');
       }
     });
   }
