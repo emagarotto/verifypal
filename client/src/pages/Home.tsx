@@ -139,7 +139,7 @@ export default function Home() {
                   <span className="text-sm font-medium">No Tracking</span>
                 </div>
                 <a 
-                  href="https://github.com/nicolo-ranieri/VerifyPal" 
+                  href="https://github.com/emagarotto/verifypal" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
@@ -308,7 +308,7 @@ export default function Home() {
                         <p className="text-sm text-muted-foreground">
                           Review the code yourself. Full transparency in how we handle your data.{" "}
                           <a 
-                            href="https://github.com/nicolo-ranieri/VerifyPal" 
+                            href="https://github.com/emagarotto/verifypal" 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-primary hover:underline"
