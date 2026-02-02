@@ -493,8 +493,10 @@
     const patterns = [
       // order #5695, order number 5695, order no. 5695
       new RegExp(`order\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
-      // invoice #5695, invoice number 5695
+      // invoice #5695, invoice number 5695, invoice FTADB-1788
       new RegExp(`invoice\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
+      new RegExp(`invoice\\s+[A-Z0-9]+-${code}`, 'i'),
+      new RegExp(`invoice\\s+[A-Z0-9]*${code}`, 'i'),
       // confirmation #5695, confirmation number 5695
       new RegExp(`confirmation\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
       // reference #5695, ref #5695
@@ -504,7 +506,12 @@
       // ticket #5695, case #5695
       new RegExp(`(?:ticket|case)\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
       // #5695 (standalone hash followed by number in context of orders)
-      new RegExp(`#${code}\\b`, 'i')
+      new RegExp(`#${code}\\b`, 'i'),
+      // Alphanumeric ID patterns: ABC-1234, ABC1234, ABCD-1234
+      new RegExp(`[A-Z]{2,}-${code}\\b`, 'i'),
+      new RegExp(`[A-Z]{2,}${code}\\b`, 'i'),
+      // Order/invoice/shipment followed by alphanumeric ID containing the code
+      new RegExp(`(?:order|invoice|shipment|receipt|transaction|booking|reservation)\\s+\\S*${code}`, 'i')
     ];
     
     for (const pattern of patterns) {
