@@ -507,11 +507,8 @@
       new RegExp(`(?:ticket|case)\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
       // #5695 (standalone hash followed by number in context of orders)
       new RegExp(`#${code}\\b`, 'i'),
-      // Alphanumeric ID patterns: ABC-1234, ABC1234, ABCD-1234
-      new RegExp(`[A-Z]{2,}-${code}\\b`, 'i'),
-      new RegExp(`[A-Z]{2,}${code}\\b`, 'i'),
-      // Order/invoice/shipment followed by alphanumeric ID containing the code
-      new RegExp(`(?:order|invoice|shipment|receipt|transaction|booking|reservation)\\s+\\S*${code}`, 'i')
+      // Order/invoice/shipment followed by any ID containing the code (including alphanumeric like FTADB-1788)
+      new RegExp(`(?:order|invoice|shipment|receipt|transaction|booking|reservation|payment|purchase|bill)\\s+\\S*${code}`, 'i')
     ];
     
     for (const pattern of patterns) {
