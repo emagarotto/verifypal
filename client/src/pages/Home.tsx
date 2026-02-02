@@ -113,13 +113,11 @@ export default function Home() {
                 Chrome Extension
               </Badge>
               <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6" data-testid="text-hero-title">
-                Stop Copying{" "}
-                <span className="text-primary">Verification Codes</span>{" "}
-                Manually
+                Your verification codes,{" "}
+                <span className="text-primary">on autopilot</span>
               </h1>
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
-                VerifyPal automatically detects sign-in codes from your email, fills them 
-                into verification forms, and submits for you. No more tab switching, no more copy-paste.
+                VerifyPal grabs your code, fills it in, and signs you in instantly.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button 
