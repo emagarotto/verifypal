@@ -455,6 +455,12 @@
       triggerInputEvents(input);
       
       showFilledNotification(code);
+      
+      // Press Enter after a short delay to submit
+      setTimeout(() => {
+        pressEnterToSubmit(input);
+      }, 300);
+      
       return true;
     } else if (otpInputs.type === 'multiple') {
       // Fill multiple inputs
@@ -479,10 +485,89 @@
       }
       
       showFilledNotification(code);
+      
+      // Press Enter after a short delay to submit
+      const lastInput = inputs[digits.length - 1] || inputs[inputs.length - 1];
+      setTimeout(() => {
+        pressEnterToSubmit(lastInput);
+      }, 300);
+      
       return true;
     }
 
     return false;
+  }
+
+  function pressEnterToSubmit(input) {
+    if (!input) return;
+    
+    // First, try to find and click a submit button
+    const form = input.closest('form');
+    const container = input.closest('[role="dialog"]') || 
+                      input.closest('.modal') || 
+                      input.closest('[class*="modal" i]') ||
+                      form ||
+                      document.body;
+    
+    // Look for submit/verify/continue buttons
+    const buttonSelectors = [
+      'button[type="submit"]',
+      'input[type="submit"]',
+      'button[class*="submit" i]',
+      'button[class*="verify" i]',
+      'button[class*="continue" i]',
+      'button[class*="confirm" i]',
+      'button:not([type="button"])'
+    ];
+    
+    for (const selector of buttonSelectors) {
+      const button = container.querySelector(selector);
+      if (button && isVisible(button)) {
+        debugLog('Found submit button, clicking:', button);
+        button.click();
+        return;
+      }
+    }
+    
+    // If no button found, dispatch Enter key events on the input
+    debugLog('No submit button found, pressing Enter on input');
+    
+    const enterKeyDown = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    });
+    
+    const enterKeyPress = new KeyboardEvent('keypress', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    });
+    
+    const enterKeyUp = new KeyboardEvent('keyup', {
+      key: 'Enter',
+      code: 'Enter',
+      keyCode: 13,
+      which: 13,
+      bubbles: true,
+      cancelable: true
+    });
+    
+    input.dispatchEvent(enterKeyDown);
+    input.dispatchEvent(enterKeyPress);
+    input.dispatchEvent(enterKeyUp);
+    
+    // Also try submitting the form directly
+    if (form) {
+      debugLog('Submitting form directly');
+      form.requestSubmit ? form.requestSubmit() : form.submit();
+    }
   }
 
   function triggerInputEvents(input) {
