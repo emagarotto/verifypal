@@ -41,6 +41,9 @@
     /(?:^|\n)\s*code[:\s]+(\d{4,8})(?:\s|$|\.|\n)/gim,
     // "Security code is: 123456"
     /(?:security\s+code\s+is[:\s]*)\s*(\d{4,8})/gi,
+    // "verification code is 123456" (without "your")
+    /(?:verification\s+code\s+is[:\s]*)\s*(\d{4,8})/gi,
+    /(?:verification\s+code\s+is[:\s]*)\s*([A-Z0-9]{4,8})/gi,
     // Codes with spaces like "123 456" or dashes "123-456"
     /(?:code[:\s]*)\s*(\d{3}[\s-]\d{3})/gi,
     // Bold or emphasized codes (often in HTML emails)
