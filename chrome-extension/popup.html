@@ -248,7 +248,7 @@
     .history-item {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 8px;
       padding: 8px 12px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 6px;
@@ -260,11 +260,34 @@
       font-family: 'Courier New', monospace;
       font-weight: 600;
       letter-spacing: 2px;
+      flex: 1;
     }
 
     .history-time {
       opacity: 0.6;
       font-size: 10px;
+    }
+
+    .history-copy-btn {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 4px;
+      padding: 4px 6px;
+      cursor: pointer;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .history-copy-btn:hover {
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(1.1);
+    }
+
+    .history-copy-btn:active {
+      transform: scale(0.95);
     }
   </style>
 </head>

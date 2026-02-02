@@ -48,7 +48,6 @@
   ];
 
   // Fallback patterns for detecting verification codes
-  // Only 4-6 digit codes - 7+ digits are often monetary amounts
   const FALLBACK_CODE_PATTERNS = [
     // 6-digit codes (most common for verification)
     /\b(\d{6})\b/g,
@@ -56,6 +55,8 @@
     /\b(\d{4})\b/g,
     // 5-digit codes
     /\b(\d{5})\b/g,
+    // 7-8 digit codes
+    /\b(\d{7,8})\b/g,
     // Alphanumeric codes (6-8 chars, uppercase) - these must have letters
     /\b([A-Z][A-Z0-9]{5,7})\b/g,
     /\b([A-Z0-9]{5,7}[A-Z])\b/g
@@ -336,7 +337,7 @@
         let code = match[1];
         // Clean up codes with spaces/dashes
         code = code.replace(/[\s-]/g, '');
-        if (code && code.length >= 4 && code.length <= 6) {
+        if (code && code.length >= 4 && code.length <= 8) {
           // Exclude unlikely codes - pass content for currency check
           if (isValidCode(code, content)) {
             return code;
@@ -361,8 +362,8 @@
           return sixDigitMatch[1];
         }
         
-        // Then 4-6 digit codes (not 7-8 which are often monetary)
-        const digitMatch = nearbyText.match(/\b(\d{4,6})\b/);
+        // Then 4-8 digit codes
+        const digitMatch = nearbyText.match(/\b(\d{4,8})\b/);
         if (digitMatch && isValidCode(digitMatch[1], content)) {
           return digitMatch[1];
         }
@@ -463,20 +464,15 @@
     if (/^(12345678|87654321|123456|654321)$/.test(code)) return false; // Sequential
     if (/^(00000000|11111111|99999999)$/.test(code)) return false; // All same
     
-    // Reject codes longer than 6 digits that don't look like verification codes
-    // Most verification codes are 4-6 digits. 7-8 digit codes are rare.
-    // Large numbers like 210700 are likely monetary amounts
-    if (/^\d{7,}$/.test(code)) return false;
-    
     // Valid codes are either:
-    // 1. All digits (most common: 4-6 digit numeric codes)
+    // 1. All digits (4-8 digit numeric codes)
     // 2. Alphanumeric with at least one digit AND one letter
     const hasDigit = /\d/.test(code);
     const hasLetter = /[A-Za-z]/.test(code);
     const isAllDigits = /^\d+$/.test(code);
     
-    // Pure numeric codes - prefer 4-6 digits, allow up to 8 only if context is strong
-    if (isAllDigits && code.length >= 4 && code.length <= 6) {
+    // Pure numeric codes 4-8 digits
+    if (isAllDigits && code.length >= 4 && code.length <= 8) {
       return true;
     }
     

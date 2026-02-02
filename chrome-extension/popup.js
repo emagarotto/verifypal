@@ -172,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Load history - show expired status for old codes
       if (data.codeHistory && data.codeHistory.length > 0) {
         historySection.style.display = 'block';
-        historyList.innerHTML = data.codeHistory.slice(0, 5).map(item => {
+        historyList.innerHTML = data.codeHistory.slice(0, 5).map((item, index) => {
           const isExpired = Date.now() - item.timestamp > TEN_MINUTES;
           const expiredClass = isExpired ? 'style="opacity: 0.5; text-decoration: line-through;"' : '';
           const expiredLabel = isExpired ? ' (expired)' : '';
@@ -180,9 +180,28 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="history-item">
               <span class="history-code" ${expiredClass}>${item.code}</span>
               <span class="history-time">${getTimeAgo(new Date(item.timestamp))}${expiredLabel}</span>
+              <button class="history-copy-btn" data-code="${item.code}" title="Copy code">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
             </div>
           `;
         }).join('');
+        
+        // Add click handlers for copy buttons
+        document.querySelectorAll('.history-copy-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const code = e.currentTarget.dataset.code;
+            try {
+              await navigator.clipboard.writeText(code);
+              showStatus('Code copied!', 'success');
+            } catch (err) {
+              showStatus('Failed to copy', 'error');
+            }
+          });
+        });
       }
     });
   }
