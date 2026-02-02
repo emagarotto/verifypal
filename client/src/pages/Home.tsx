@@ -144,10 +144,16 @@ export default function Home() {
                   <Eye className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">No Tracking</span>
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
+                <a 
+                  href="https://github.com/nicolo-ranieri/VerifyPal" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                  data-testid="link-open-source-hero"
+                >
                   <Shield className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">Open Source</span>
-                </div>
+                </a>
               </div>
             </div>
 
@@ -305,7 +311,16 @@ export default function Home() {
                       <div>
                         <p className="font-medium">Open Source</p>
                         <p className="text-sm text-muted-foreground">
-                          Review the code yourself. Full transparency in how we handle your data.
+                          Review the code yourself. Full transparency in how we handle your data.{" "}
+                          <a 
+                            href="https://github.com/nicolo-ranieri/VerifyPal" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                            data-testid="link-view-source"
+                          >
+                            View source code
+                          </a>
                         </p>
                       </div>
                     </li>
