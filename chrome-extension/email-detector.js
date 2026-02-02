@@ -483,6 +483,36 @@
     return false;
   }
 
+  function isOrderOrInvoiceNumber(code, content) {
+    if (!content) return false;
+    
+    // Patterns that indicate order/invoice/reference numbers
+    const patterns = [
+      // order #5695, order number 5695, order no. 5695
+      new RegExp(`order\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
+      // invoice #5695, invoice number 5695
+      new RegExp(`invoice\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
+      // confirmation #5695, confirmation number 5695
+      new RegExp(`confirmation\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
+      // reference #5695, ref #5695
+      new RegExp(`ref(?:erence)?\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
+      // tracking #5695, tracking number 5695
+      new RegExp(`tracking\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
+      // ticket #5695, case #5695
+      new RegExp(`(?:ticket|case)\\s*(?:#|number|no\\.?)?\\s*${code}`, 'i'),
+      // #5695 (standalone hash followed by number in context of orders)
+      new RegExp(`#${code}\\b`, 'i')
+    ];
+    
+    for (const pattern of patterns) {
+      if (pattern.test(content)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
   function isValidCode(code, content) {
     if (!code) return false;
     
@@ -501,6 +531,9 @@
     
     // Exclude phone number parts
     if (isPhoneNumberPart(code, content)) return false;
+    
+    // Exclude order numbers, invoice numbers, etc.
+    if (isOrderOrInvoiceNumber(code, content)) return false;
     
     // Exclude common non-code patterns
     if (/^(19|20)\d{2}$/.test(code)) return false; // Years like 2024
