@@ -34,18 +34,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 async function handleCodeDetected(code, source) {
   // Get current history and check if code was already detected
-  const data = await chrome.storage.local.get(['codeHistory', 'detectedCodes']);
+  const data = await chrome.storage.local.get(['codeHistory', 'detectedCodesWithTime']);
   const history = data.codeHistory || [];
-  const detectedCodes = data.detectedCodes || [];
+  let detectedCodesWithTime = data.detectedCodesWithTime || [];
   
-  // Check if this code was already detected - skip if duplicate
-  if (detectedCodes.includes(code)) {
-    return; // Code already detected, don't process again
+  const TEN_MINUTES = 10 * 60 * 1000;
+  const now = Date.now();
+  
+  // Clean up old entries (older than 10 minutes)
+  detectedCodesWithTime = detectedCodesWithTime.filter(entry => (now - entry.timestamp) < TEN_MINUTES);
+  
+  // Check if this code was detected within the last 10 minutes - skip if so
+  const recentlyDetected = detectedCodesWithTime.some(entry => entry.code === code);
+  if (recentlyDetected) {
+    return; // Code was detected recently, don't process again
   }
   
-  // Add code to detected list (keep last 50 to prevent memory bloat)
-  detectedCodes.unshift(code);
-  const trimmedDetected = detectedCodes.slice(0, 50);
+  // Add code to detected list with timestamp
+  detectedCodesWithTime.unshift({ code, timestamp: now });
+  // Keep last 50 to prevent memory bloat
+  const trimmedDetected = detectedCodesWithTime.slice(0, 50);
   
   // Add to history
   history.unshift({
@@ -63,7 +71,7 @@ async function handleCodeDetected(code, source) {
     codeSource: source,
     codeTimestamp: Date.now(),
     codeHistory: trimmedHistory,
-    detectedCodes: trimmedDetected
+    detectedCodesWithTime: trimmedDetected
   });
   
   // Show notification badge
@@ -94,7 +102,7 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.local.set({
     autoPasteEnabled: true,
     codeHistory: [],
-    detectedCodes: []
+    detectedCodesWithTime: []
   });
 });
 
