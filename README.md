@@ -2,7 +2,7 @@
 
 Your verification codes, on autopilot.
 
-VerifyPal is a Chrome browser extension that automatically detects verification codes from your email (Gmail, Outlook, Yahoo Mail), fills them into sign-in forms, and submits for you.
+VerifyPal is a Chrome browser extension that automatically detects verification codes from your email (Gmail, Outlook, Yahoo Mail, etc.), fills them into sign-in forms, and submits for you.
 
 ## Features
 
