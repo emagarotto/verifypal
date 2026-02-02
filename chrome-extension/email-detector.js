@@ -245,29 +245,29 @@
       // Gmail email preview snippets (visible in inbox list without opening)
       // Only scan emails that are recent (within 10 minutes)
       if (!content) {
-        const emailRows = document.querySelectorAll('.zA, tr[role="row"]');
+        const emailRows = document.querySelectorAll('.zA, tr[role="row"], div[role="row"]');
         emailRows.forEach(row => {
-          // Get the timestamp from this row
-          const timeEl = row.querySelector('.xW.xY span, .xW span, td.xW span');
+          // Get the timestamp from this row - try multiple selectors
+          const timeEl = row.querySelector('.xW.xY span, .xW span, td.xW span, span[title*=":"], .bq3');
+          let skipRow = false;
+          
           if (timeEl) {
             const timeText = timeEl.getAttribute('title') || timeEl.textContent || '';
             const rowTimestamp = parseEmailTime(timeText);
             
             // Skip this row if email is too old
             if (rowTimestamp && isEmailTooOld(rowTimestamp)) {
-              return; // Skip this email row
+              skipRow = true;
             }
           }
           
-          // Get snippet and subject from this row
-          const snippetEl = row.querySelector('.y2, span.bog, .xT span');
-          if (snippetEl) {
-            content += ' ' + (snippetEl.textContent || '');
-          }
-          const subjectEl = row.querySelector('.bqe, .bog, .xT span.y2');
-          if (subjectEl) {
-            subject += ' ' + (subjectEl.textContent || '');
-          }
+          if (skipRow) return;
+          
+          // Get ALL text from the row - subject and snippet combined
+          // This is more reliable than specific selectors
+          const rowText = row.textContent || '';
+          content += ' ' + rowText;
+          subject += ' ' + rowText;
         });
         emailTimestamp = null; // Already filtered per-row
       }
