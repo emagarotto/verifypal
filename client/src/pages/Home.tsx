@@ -68,50 +68,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Clipboard className="h-5 w-5" />
-            </div>
-            <span className="text-lg font-semibold">VerifyPal</span>
-          </div>
-          <nav className="flex items-center gap-4">
-            <a 
-              href="#features" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              data-testid="link-features"
-            >
-              Features
-            </a>
-            <a 
-              href="#how-it-works" 
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              data-testid="link-how-it-works"
-            >
-              How it Works
-            </a>
-            <Button 
-              size="sm" 
-              data-testid="button-download-header"
-              onClick={() => window.location.href = '/api/download-extension'}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download
-            </Button>
-          </nav>
-        </div>
-      </header>
-
       <main>
         <section className="relative overflow-hidden pt-20 pb-10 sm:pt-32 sm:pb-16">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
           <div className="container mx-auto px-4 relative">
             <div className="mx-auto max-w-3xl text-center">
-              <Badge variant="secondary" className="mb-6" data-testid="badge-chrome">
-                <Chrome className="h-3 w-3 mr-1" />
-                Chrome Extension
-              </Badge>
               <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6" data-testid="text-hero-title">
                 Your verification codes,{" "}
                 <span className="text-primary whitespace-nowrap">on autopilot</span>
