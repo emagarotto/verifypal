@@ -219,8 +219,9 @@ export default function Home() {
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold mb-4" data-testid="text-features-title">Why VerifyPal?</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Simple, secure, and lightning fast. Here's what makes VerifyPal the best 
-                verification code assistant.
+                Simple, secure, and lightning fast!
+                <br />
+                Here's what makes VerifyPal the best verification code assistant.
               </p>
             </div>
 
