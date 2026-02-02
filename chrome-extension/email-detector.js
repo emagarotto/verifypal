@@ -48,15 +48,17 @@
   ];
 
   // Fallback patterns for detecting verification codes
+  // Only 4-6 digit codes - 7+ digits are often monetary amounts
   const FALLBACK_CODE_PATTERNS = [
-    // 6-digit codes (most common)
+    // 6-digit codes (most common for verification)
     /\b(\d{6})\b/g,
-    // 4-digit codes  
+    // 4-digit codes (PIN-style)
     /\b(\d{4})\b/g,
-    // 8-digit codes
-    /\b(\d{8})\b/g,
-    // Alphanumeric codes (6-8 chars, uppercase)
-    /\b([A-Z0-9]{6,8})\b/g
+    // 5-digit codes
+    /\b(\d{5})\b/g,
+    // Alphanumeric codes (6-8 chars, uppercase) - these must have letters
+    /\b([A-Z][A-Z0-9]{5,7})\b/g,
+    /\b([A-Z0-9]{5,7}[A-Z])\b/g
   ];
 
   // Keywords that indicate a verification code context
@@ -334,9 +336,9 @@
         let code = match[1];
         // Clean up codes with spaces/dashes
         code = code.replace(/[\s-]/g, '');
-        if (code && code.length >= 4 && code.length <= 8) {
-          // Exclude unlikely codes
-          if (isValidCode(code)) {
+        if (code && code.length >= 4 && code.length <= 6) {
+          // Exclude unlikely codes - pass content for currency check
+          if (isValidCode(code, content)) {
             return code;
           }
         }
@@ -355,19 +357,19 @@
         
         // Look for 6-digit codes first (most common)
         const sixDigitMatch = nearbyText.match(/\b(\d{6})\b/);
-        if (sixDigitMatch && isValidCode(sixDigitMatch[1])) {
+        if (sixDigitMatch && isValidCode(sixDigitMatch[1], content)) {
           return sixDigitMatch[1];
         }
         
-        // Then 4-8 digit codes
-        const digitMatch = nearbyText.match(/\b(\d{4,8})\b/);
-        if (digitMatch && isValidCode(digitMatch[1])) {
+        // Then 4-6 digit codes (not 7-8 which are often monetary)
+        const digitMatch = nearbyText.match(/\b(\d{4,6})\b/);
+        if (digitMatch && isValidCode(digitMatch[1], content)) {
           return digitMatch[1];
         }
         
         // Then alphanumeric
         const alphaMatch = nearbyText.match(/\b([A-Z0-9]{6,8})\b/);
-        if (alphaMatch && isValidCode(alphaMatch[1])) {
+        if (alphaMatch && isValidCode(alphaMatch[1], content)) {
           return alphaMatch[1];
         }
       }
@@ -380,7 +382,7 @@
       if (matches) {
         // Find the first valid code
         for (const match of matches) {
-          if (isValidCode(match)) {
+          if (isValidCode(match, content)) {
             return match;
           }
         }
@@ -411,7 +413,33 @@
     'password', 'username', 'user', 'pass', 'word'
   ]);
 
-  function isValidCode(code) {
+  // Check if a number appears as currency in the content
+  function isCurrencyAmount(code, content) {
+    if (!content) return false;
+    
+    // Look for the code with currency symbols or comma formatting nearby
+    // Patterns: $210,700 or $210700 or €1,234 or £5000 etc.
+    const currencyPatterns = [
+      // Currency symbol before: $210,700 or $210700
+      new RegExp(`[\\$€£¥₹]\\s*[\\d,]*${code.replace(/,/g, ',')}`, 'i'),
+      // With commas in number: 210,700
+      new RegExp(`\\b\\d{1,3}(,\\d{3})+\\b`),
+      // Followed by currency words
+      new RegExp(`${code}\\s*(dollars?|cents?|usd|eur|gbp|pounds?|euros?)`, 'i'),
+      // Preceded by currency words
+      new RegExp(`(price|cost|amount|total|payment|balance|fee|charge)[:\\s]*[\\$€£]?\\s*[\\d,]*${code}`, 'i')
+    ];
+    
+    for (const pattern of currencyPatterns) {
+      if (pattern.test(content)) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  function isValidCode(code, content) {
     if (!code) return false;
     
     // Must be at least 4 characters
@@ -424,6 +452,9 @@
     // Pure letter codes like "YOUR", "CODE" are likely words, not codes
     if (/^[A-Za-z]+$/.test(code)) return false;
     
+    // Exclude currency amounts (like $210,700)
+    if (isCurrencyAmount(code, content)) return false;
+    
     // Exclude common non-code patterns
     if (/^(19|20)\d{2}$/.test(code)) return false; // Years like 2024
     if (/^0{4,}$/.test(code)) return false; // All zeros
@@ -432,15 +463,20 @@
     if (/^(12345678|87654321|123456|654321)$/.test(code)) return false; // Sequential
     if (/^(00000000|11111111|99999999)$/.test(code)) return false; // All same
     
+    // Reject codes longer than 6 digits that don't look like verification codes
+    // Most verification codes are 4-6 digits. 7-8 digit codes are rare.
+    // Large numbers like 210700 are likely monetary amounts
+    if (/^\d{7,}$/.test(code)) return false;
+    
     // Valid codes are either:
-    // 1. All digits (most common: 4-8 digit numeric codes)
+    // 1. All digits (most common: 4-6 digit numeric codes)
     // 2. Alphanumeric with at least one digit AND one letter
     const hasDigit = /\d/.test(code);
     const hasLetter = /[A-Za-z]/.test(code);
     const isAllDigits = /^\d+$/.test(code);
     
-    // Pure numeric codes are most reliable
-    if (isAllDigits && code.length >= 4 && code.length <= 8) {
+    // Pure numeric codes - prefer 4-6 digits, allow up to 8 only if context is strong
+    if (isAllDigits && code.length >= 4 && code.length <= 6) {
       return true;
     }
     
