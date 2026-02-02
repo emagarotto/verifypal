@@ -55,7 +55,7 @@ export default function Home() {
     {
       number: "3",
       title: "Auto-Fill & Submit",
-      description: "Switch to the verification page and the code is automatically filled and submitted."
+      description: "The code is auto-filled and auto-applied."
     }
   ];
 
