@@ -119,17 +119,7 @@ export default function Home() {
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
                 VerifyPal grabs your code, fills it in, and signs you in instantly.
               </p>
-              <Button 
-                size="lg" 
-                className="gap-2" 
-                data-testid="button-download-hero"
-                onClick={() => window.location.href = '/api/download-extension'}
-              >
-                <Download className="h-5 w-5" />
-                Download Extension
-              </Button>
-              
-              <div className="flex flex-wrap items-center justify-center gap-6 mt-8" data-testid="privacy-highlights">
+              <div className="flex flex-wrap items-center justify-center gap-6" data-testid="privacy-highlights">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Lock className="h-4 w-4 text-primary" />
                   <span className="text-sm font-medium">100% Local Processing</span>
