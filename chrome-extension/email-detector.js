@@ -440,6 +440,36 @@
     return false;
   }
 
+  function isPhoneNumberPart(code, content) {
+    if (!content) return false;
+    
+    // Phone number patterns that might contain our code
+    const phonePatterns = [
+      // US format: (XXX) XXX-XXXX or XXX-XXX-XXXX
+      /\(\d{3}\)\s*\d{3}[-.\s]\d{4}/g,
+      /\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/g,
+      // With country code: +1 XXX XXX XXXX
+      /\+\d{1,3}[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g,
+      // International formats
+      /\b\d{2,4}[-.\s]\d{2,4}[-.\s]\d{4}\b/g
+    ];
+    
+    for (const pattern of phonePatterns) {
+      const matches = content.match(pattern);
+      if (matches) {
+        for (const phone of matches) {
+          // Check if our code is part of this phone number
+          const digitsOnly = phone.replace(/\D/g, '');
+          if (digitsOnly.includes(code)) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
+  }
+
   function isValidCode(code, content) {
     if (!code) return false;
     
@@ -455,6 +485,9 @@
     
     // Exclude currency amounts (like $210,700)
     if (isCurrencyAmount(code, content)) return false;
+    
+    // Exclude phone number parts
+    if (isPhoneNumberPart(code, content)) return false;
     
     // Exclude common non-code patterns
     if (/^(19|20)\d{2}$/.test(code)) return false; // Years like 2024
