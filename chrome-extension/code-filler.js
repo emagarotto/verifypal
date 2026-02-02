@@ -598,45 +598,80 @@
       existingNotif.remove();
     }
 
+    // Create elements programmatically to avoid CSP issues with innerHTML
     const notification = document.createElement('div');
     notification.id = 'codepaste-filled-notification';
-    notification.innerHTML = `
-      <div style="
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-        color: white;
-        padding: 14px 18px;
-        border-radius: 10px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-        z-index: 999999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        animation: slideUp 0.3s ease;
-        font-size: 14px;
-      ">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span>Code <strong style="letter-spacing: 2px; font-family: monospace;">${code}</strong> auto-filled!</span>
-      </div>
-      <style>
-        @keyframes slideUp {
-          from { transform: translateY(100%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      </style>
-    `;
+    
+    const container = document.createElement('div');
+    Object.assign(container.style, {
+      position: 'fixed',
+      bottom: '20px',
+      right: '20px',
+      background: 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
+      color: 'white',
+      padding: '14px 18px',
+      borderRadius: '10px',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+      zIndex: '999999',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      fontSize: '14px',
+      transform: 'translateY(0)',
+      opacity: '1',
+      transition: 'transform 0.3s ease, opacity 0.3s ease'
+    });
+    
+    // Create checkmark SVG
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '18');
+    svg.setAttribute('height', '18');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2.5');
+    
+    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    polyline.setAttribute('points', '20 6 9 17 4 12');
+    svg.appendChild(polyline);
+    
+    // Create text span
+    const textSpan = document.createElement('span');
+    textSpan.textContent = 'Code ';
+    
+    const codeStrong = document.createElement('strong');
+    Object.assign(codeStrong.style, {
+      letterSpacing: '2px',
+      fontFamily: 'monospace'
+    });
+    codeStrong.textContent = code;
+    
+    const afterText = document.createTextNode(' auto-filled!');
+    
+    textSpan.appendChild(codeStrong);
+    textSpan.appendChild(afterText);
+    
+    container.appendChild(svg);
+    container.appendChild(textSpan);
+    notification.appendChild(container);
 
+    // Animate in
+    container.style.transform = 'translateY(100%)';
+    container.style.opacity = '0';
     document.body.appendChild(notification);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+      container.style.transform = 'translateY(0)';
+      container.style.opacity = '1';
+    });
 
     // Auto-remove after 3 seconds
     setTimeout(() => {
       if (notification.parentElement) {
-        notification.style.animation = 'slideUp 0.3s ease reverse';
+        container.style.transform = 'translateY(100%)';
+        container.style.opacity = '0';
         setTimeout(() => notification.remove(), 300);
       }
     }, 3000);

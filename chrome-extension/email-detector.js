@@ -591,77 +591,132 @@
       existingNotif.remove();
     }
 
+    // Create elements programmatically to avoid CSP issues with innerHTML
     const notification = document.createElement('div');
     notification.id = 'codepaste-notification';
-    notification.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 16px 20px;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        z-index: 999999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        animation: slideIn 0.3s ease;
-      ">
-        <div style="
-          width: 32px;
-          height: 32px;
-          background: rgba(255,255,255,0.2);
-          border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        ">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-            <polyline points="9 12 11 14 15 10"></polyline>
-          </svg>
-        </div>
-        <div>
-          <div style="font-size: 12px; opacity: 0.9;">Code detected</div>
-          <div style="font-size: 20px; font-weight: 700; letter-spacing: 3px; font-family: monospace;">${code}</div>
-        </div>
-        <button id="codepaste-close" style="
-          background: rgba(255,255,255,0.2);
-          border: none;
-          color: white;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-left: 8px;
-        ">×</button>
-      </div>
-      <style>
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      </style>
-    `;
-
-    document.body.appendChild(notification);
-
-    // Add close handler
-    document.getElementById('codepaste-close').addEventListener('click', () => {
+    
+    const container = document.createElement('div');
+    Object.assign(container.style, {
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      padding: '16px 20px',
+      borderRadius: '12px',
+      boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+      zIndex: '999999',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      transform: 'translateX(0)',
+      opacity: '1',
+      transition: 'transform 0.3s ease, opacity 0.3s ease'
+    });
+    
+    // Create icon container
+    const iconContainer = document.createElement('div');
+    Object.assign(iconContainer.style, {
+      width: '32px',
+      height: '32px',
+      background: 'rgba(255,255,255,0.2)',
+      borderRadius: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    });
+    
+    // Create SVG icon
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '18');
+    svg.setAttribute('height', '18');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2');
+    
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2');
+    
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', '8');
+    rect.setAttribute('y', '2');
+    rect.setAttribute('width', '8');
+    rect.setAttribute('height', '4');
+    rect.setAttribute('rx', '1');
+    rect.setAttribute('ry', '1');
+    
+    const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    polyline.setAttribute('points', '9 12 11 14 15 10');
+    
+    svg.appendChild(path);
+    svg.appendChild(rect);
+    svg.appendChild(polyline);
+    iconContainer.appendChild(svg);
+    
+    // Create text container
+    const textContainer = document.createElement('div');
+    
+    const labelDiv = document.createElement('div');
+    Object.assign(labelDiv.style, {
+      fontSize: '12px',
+      opacity: '0.9'
+    });
+    labelDiv.textContent = 'Code detected';
+    
+    const codeDiv = document.createElement('div');
+    Object.assign(codeDiv.style, {
+      fontSize: '20px',
+      fontWeight: '700',
+      letterSpacing: '3px',
+      fontFamily: 'monospace'
+    });
+    codeDiv.textContent = code;
+    
+    textContainer.appendChild(labelDiv);
+    textContainer.appendChild(codeDiv);
+    
+    // Create close button
+    const closeBtn = document.createElement('button');
+    Object.assign(closeBtn.style, {
+      background: 'rgba(255,255,255,0.2)',
+      border: 'none',
+      color: 'white',
+      width: '24px',
+      height: '24px',
+      borderRadius: '50%',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: '8px'
+    });
+    closeBtn.textContent = '×';
+    closeBtn.addEventListener('click', () => {
       notification.remove();
+    });
+    
+    container.appendChild(iconContainer);
+    container.appendChild(textContainer);
+    container.appendChild(closeBtn);
+    notification.appendChild(container);
+    
+    // Animate in
+    container.style.transform = 'translateX(100%)';
+    container.style.opacity = '0';
+    document.body.appendChild(notification);
+    
+    requestAnimationFrame(() => {
+      container.style.transform = 'translateX(0)';
+      container.style.opacity = '1';
     });
 
     // Auto-remove after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
-        notification.style.animation = 'slideIn 0.3s ease reverse';
+        container.style.transform = 'translateX(100%)';
+        container.style.opacity = '0';
         setTimeout(() => notification.remove(), 300);
       }
     }, 5000);
