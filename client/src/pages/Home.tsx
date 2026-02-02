@@ -63,7 +63,7 @@ export default function Home() {
     { name: "Gmail", supported: true },
     { name: "Outlook", supported: true },
     { name: "Yahoo Mail", supported: true },
-    { name: "Other web mail", supported: false, note: "Coming soon" }
+    { name: "Other web mail", supported: false, note: "Should work too!" }
   ];
 
   return (
