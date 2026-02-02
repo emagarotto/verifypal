@@ -104,7 +104,7 @@ export default function Home() {
       </header>
 
       <main>
-        <section className="relative overflow-hidden py-20 sm:py-32">
+        <section className="relative overflow-hidden pt-20 pb-10 sm:pt-32 sm:pb-16">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
           <div className="container mx-auto px-4 relative">
             <div className="mx-auto max-w-3xl text-center">
