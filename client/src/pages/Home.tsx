@@ -114,7 +114,7 @@ export default function Home() {
               </Badge>
               <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6" data-testid="text-hero-title">
                 Your verification codes,{" "}
-                <span className="text-primary">on autopilot</span>
+                <span className="text-primary whitespace-nowrap">on autopilot</span>
               </h1>
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
                 VerifyPal grabs your code, fills it in, and signs you in instantly.
