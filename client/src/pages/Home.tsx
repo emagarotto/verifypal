@@ -136,9 +136,24 @@ export default function Home() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
+              
+              <div className="flex flex-wrap items-center justify-center gap-6 mt-8" data-testid="privacy-highlights">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Lock className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">100% Local Processing</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Eye className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">No Tracking</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Open Source</span>
+                </div>
+              </div>
             </div>
 
-            <div className="mt-16 mx-auto max-w-5xl">
+            <div className="mt-12 mx-auto max-w-5xl">
               <Card className="overflow-hidden border-2">
                 <CardContent className="p-0">
                   <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 sm:p-10">
