@@ -50,21 +50,6 @@
     /(?:is|:)\s*<[^>]*>(\d{4,8})<\/[^>]*>/gi
   ];
 
-  // Fallback patterns for detecting verification codes
-  const FALLBACK_CODE_PATTERNS = [
-    // 6-digit codes (most common for verification)
-    /\b(\d{6})\b/g,
-    // 4-digit codes (PIN-style)
-    /\b(\d{4})\b/g,
-    // 5-digit codes
-    /\b(\d{5})\b/g,
-    // 7-8 digit codes
-    /\b(\d{7,8})\b/g,
-    // Alphanumeric codes (6-8 chars, uppercase) - these must have letters
-    /\b([A-Z][A-Z0-9]{5,7})\b/g,
-    /\b([A-Z0-9]{5,7}[A-Z])\b/g
-  ];
-
   // Keywords that indicate a verification code context
   const CONTEXT_KEYWORDS = [
     // Code type keywords
@@ -392,20 +377,7 @@
       }
     }
 
-    // THIRD: Fallback to general pattern matching with preferences
-    for (const pattern of FALLBACK_CODE_PATTERNS) {
-      pattern.lastIndex = 0;
-      const matches = content.match(pattern);
-      if (matches) {
-        // Find the first valid code
-        for (const match of matches) {
-          if (isValidCode(match, content)) {
-            return match;
-          }
-        }
-      }
-    }
-
+    // No fallback - only detect codes that have explicit preceding terms
     return null;
   }
 
