@@ -13,7 +13,8 @@ import {
   Chrome,
   Lock,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Send
 } from "lucide-react";
 
 export default function Home() {
@@ -137,12 +138,12 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-16 mx-auto max-w-4xl">
+            <div className="mt-16 mx-auto max-w-5xl">
               <Card className="overflow-hidden border-2">
                 <CardContent className="p-0">
-                  <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-8 sm:p-12">
-                    <div className="flex flex-col sm:flex-row items-center gap-8">
-                      <div className="flex-1 space-y-4">
+                  <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 sm:p-10">
+                    <div className="flex flex-col lg:flex-row items-center gap-6">
+                      <div className="flex-1 space-y-3">
                         <div className="flex items-center gap-3 p-4 bg-card rounded-lg border">
                           <Mail className="h-6 w-6 text-primary" />
                           <div className="flex-1">
@@ -151,30 +152,45 @@ export default function Home() {
                           </div>
                           <Check className="h-5 w-5 text-green-500" />
                         </div>
-                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <div className="flex items-center justify-center gap-2 text-primary">
                           <RefreshCw className="h-4 w-4 animate-spin" />
-                          <span className="text-sm">Auto-syncing...</span>
+                          <span className="text-sm font-medium">Auto-syncing</span>
                         </div>
                       </div>
-                      <ArrowRight className="h-8 w-8 text-muted-foreground hidden sm:block" />
-                      <div className="flex-1 space-y-4">
+                      <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block" />
+                      <div className="flex-1 space-y-3">
                         <div className="p-4 bg-card rounded-lg border">
                           <p className="text-sm text-muted-foreground mb-3">Enter verification code</p>
-                          <div className="flex gap-2 justify-center">
+                          <div className="flex gap-1.5 justify-center">
                             {['8', '4', '7', '2', '9', '3'].map((digit, i) => (
                               <div 
                                 key={i}
-                                className="w-10 h-12 rounded-md border-2 border-primary bg-primary/5 flex items-center justify-center text-xl font-mono font-bold"
+                                className="w-9 h-11 rounded-md border-2 border-primary bg-primary/5 flex items-center justify-center text-lg font-mono font-bold"
                                 data-testid={`text-digit-${i}`}
                               >
                                 {digit}
                               </div>
                             ))}
                           </div>
-                          <div className="flex items-center justify-center gap-2 mt-3 text-green-600">
-                            <Check className="h-4 w-4" />
-                            <span className="text-sm font-medium">Auto-filled!</span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-green-600">
+                          <Check className="h-4 w-4" />
+                          <span className="text-sm font-medium">Auto-filled</span>
+                        </div>
+                      </div>
+                      <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block" />
+                      <div className="flex-1 space-y-3">
+                        <div className="p-4 bg-card rounded-lg border">
+                          <p className="text-sm text-muted-foreground mb-3 text-center">Verification complete</p>
+                          <div className="flex items-center justify-center">
+                            <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                              <Check className="h-8 w-8 text-green-500" />
+                            </div>
                           </div>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 text-green-600">
+                          <Send className="h-4 w-4" />
+                          <span className="text-sm font-medium">Auto-submitted</span>
                         </div>
                       </div>
                     </div>
