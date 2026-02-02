@@ -161,9 +161,9 @@ export default function Home() {
               <Card className="overflow-hidden border-2">
                 <CardContent className="p-0">
                   <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 sm:p-10">
-                    <div className="flex flex-col lg:flex-row items-center gap-6">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center gap-3 p-4 bg-card rounded-lg border">
+                    <div className="flex flex-col lg:flex-row items-stretch gap-6">
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex items-center gap-3 p-4 bg-card rounded-lg border flex-1">
                           <Mail className="h-6 w-6 text-primary" />
                           <div className="flex-1">
                             <p className="text-sm text-muted-foreground">Your verification code</p>
@@ -171,14 +171,14 @@ export default function Home() {
                           </div>
                           <Check className="h-5 w-5 text-green-500" />
                         </div>
-                        <div className="flex items-center justify-center gap-2 text-primary">
+                        <div className="flex items-center justify-center gap-2 text-primary mt-3">
                           <RefreshCw className="h-4 w-4 animate-spin" />
                           <span className="text-sm font-medium">Auto-syncing</span>
                         </div>
                       </div>
-                      <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block" />
-                      <div className="flex-1 space-y-3">
-                        <div className="p-4 bg-card rounded-lg border">
+                      <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block self-center" />
+                      <div className="flex-1 flex flex-col">
+                        <div className="p-4 bg-card rounded-lg border flex-1 flex flex-col justify-center">
                           <p className="text-sm text-muted-foreground mb-3">Enter verification code</p>
                           <div className="flex gap-1.5 justify-center">
                             {['8', '4', '7', '2', '9', '3'].map((digit, i) => (
@@ -192,14 +192,14 @@ export default function Home() {
                             ))}
                           </div>
                         </div>
-                        <div className="flex items-center justify-center gap-2 text-green-600">
+                        <div className="flex items-center justify-center gap-2 text-green-600 mt-3">
                           <Check className="h-4 w-4" />
                           <span className="text-sm font-medium">Auto-filled</span>
                         </div>
                       </div>
-                      <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block" />
-                      <div className="flex-1 space-y-3">
-                        <div className="p-4 bg-card rounded-lg border">
+                      <ArrowRight className="h-6 w-6 text-muted-foreground hidden lg:block self-center" />
+                      <div className="flex-1 flex flex-col">
+                        <div className="p-4 bg-card rounded-lg border flex-1 flex flex-col justify-center">
                           <p className="text-sm text-muted-foreground mb-3 text-center">Verification complete</p>
                           <div className="flex items-center justify-center">
                             <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
@@ -207,7 +207,7 @@ export default function Home() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center justify-center gap-2 text-green-600">
+                        <div className="flex items-center justify-center gap-2 text-green-600 mt-3">
                           <Send className="h-4 w-4" />
                           <span className="text-sm font-medium">Auto-submitted</span>
                         </div>
