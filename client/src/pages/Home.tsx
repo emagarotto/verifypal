@@ -25,8 +25,8 @@ export default function Home() {
     },
     {
       icon: Zap,
-      title: "Instant Auto-Fill",
-      description: "Detected codes are instantly pasted into verification fields on any website."
+      title: "Auto-Fill & Submit",
+      description: "Detected codes are instantly filled and submitted, completing verification automatically."
     },
     {
       icon: Shield,
@@ -53,8 +53,8 @@ export default function Home() {
     },
     {
       number: "3",
-      title: "Auto-Fill Magic",
-      description: "Switch to the verification page and the code is automatically filled in."
+      title: "Auto-Fill & Submit",
+      description: "Switch to the verification page and the code is automatically filled and submitted."
     }
   ];
 
@@ -117,8 +117,8 @@ export default function Home() {
                 Manually
               </h1>
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
-                CodePaste automatically detects sign-in codes from your email and pastes them 
-                into verification forms. No more tab switching, no more copy-paste.
+                CodePaste automatically detects sign-in codes from your email, fills them 
+                into verification forms, and submits for you. No more tab switching, no more copy-paste.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button 
