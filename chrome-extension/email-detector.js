@@ -240,20 +240,33 @@
       }
       
       // Gmail email preview snippets (visible in inbox list without opening)
-      // Don't check timestamp for inbox previews since we're scanning multiple emails
+      // Only scan emails that are recent (within 10 minutes)
       if (!content) {
-        const previewSnippets = document.querySelectorAll('.y2, .xT .y2, span.bog, .xS .xT span, .zA .y2');
-        previewSnippets.forEach(snippet => {
-          content += ' ' + (snippet.textContent || '');
+        const emailRows = document.querySelectorAll('.zA, tr[role="row"]');
+        emailRows.forEach(row => {
+          // Get the timestamp from this row
+          const timeEl = row.querySelector('.xW.xY span, .xW span, td.xW span');
+          if (timeEl) {
+            const timeText = timeEl.getAttribute('title') || timeEl.textContent || '';
+            const rowTimestamp = parseEmailTime(timeText);
+            
+            // Skip this row if email is too old
+            if (rowTimestamp && isEmailTooOld(rowTimestamp)) {
+              return; // Skip this email row
+            }
+          }
+          
+          // Get snippet and subject from this row
+          const snippetEl = row.querySelector('.y2, span.bog, .xT span');
+          if (snippetEl) {
+            content += ' ' + (snippetEl.textContent || '');
+          }
+          const subjectEl = row.querySelector('.bqe, .bog, .xT span.y2');
+          if (subjectEl) {
+            subject += ' ' + (subjectEl.textContent || '');
+          }
         });
-        
-        // Also grab subject lines from inbox
-        const subjectLines = document.querySelectorAll('.bqe, .bog, .xT span.y2');
-        subjectLines.forEach(subj => {
-          subject += ' ' + (subj.textContent || '');
-        });
-        // No timestamp check for inbox previews - we can't reliably attribute timestamps
-        emailTimestamp = null;
+        emailTimestamp = null; // Already filtered per-row
       }
     } else if (provider === 'outlook') {
       // Outlook email body (when email is open)
