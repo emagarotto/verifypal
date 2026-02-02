@@ -121,7 +121,7 @@
   
   function debugLog(...args) {
     if (DEBUG) {
-      console.log('[CodePaste]', ...args);
+      console.log('[VerifyPal]', ...args);
     }
   }
 
@@ -593,14 +593,14 @@
   }
 
   function showFilledNotification(code) {
-    const existingNotif = document.getElementById('codepaste-filled-notification');
+    const existingNotif = document.getElementById('verifypal-filled-notification');
     if (existingNotif) {
       existingNotif.remove();
     }
 
     // Create elements programmatically to avoid CSP issues with innerHTML
     const notification = document.createElement('div');
-    notification.id = 'codepaste-filled-notification';
+    notification.id = 'verifypal-filled-notification';
     
     const container = document.createElement('div');
     Object.assign(container.style, {

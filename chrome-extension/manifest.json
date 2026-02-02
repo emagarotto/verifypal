@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "CodePaste",
+  "name": "VerifyPal",
   "version": "1.0.0",
   "description": "Automatically detect and paste sign-in verification codes from your email",
   "permissions": [

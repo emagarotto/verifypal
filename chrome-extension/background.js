@@ -1,4 +1,4 @@
-// Background service worker for CodePaste extension
+// Background service worker for VerifyPal extension
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

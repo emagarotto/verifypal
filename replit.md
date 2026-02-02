@@ -1,8 +1,8 @@
-# CodePaste
+# VerifyPal
 
 ## Overview
 
-CodePaste is a Chrome browser extension with an accompanying landing page website. The extension automatically detects verification codes (OTP, 2FA codes) in email clients like Gmail, Outlook, and Yahoo, then auto-fills them into sign-in forms on any website. The web application serves as a marketing landing page and provides a download endpoint for the extension.
+VerifyPal is a Chrome browser extension with an accompanying landing page website. The extension automatically detects verification codes (OTP, 2FA codes) in email clients like Gmail, Outlook, and Yahoo, then auto-fills them into sign-in forms on any website. The web application serves as a marketing landing page and provides a download endpoint for the extension.
 
 ## User Preferences
 

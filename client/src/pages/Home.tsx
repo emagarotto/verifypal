@@ -45,12 +45,12 @@ export default function Home() {
     {
       number: "1",
       title: "Install the Extension",
-      description: "Download and install CodePaste from Chrome Web Store or load it manually."
+      description: "Download and install VerifyPal from Chrome Web Store or load it manually."
     },
     {
       number: "2",
       title: "Open Your Email",
-      description: "When you receive a verification email, CodePaste automatically detects the code."
+      description: "When you receive a verification email, VerifyPal automatically detects the code."
     },
     {
       number: "3",
@@ -74,7 +74,7 @@ export default function Home() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Clipboard className="h-5 w-5" />
             </div>
-            <span className="text-lg font-semibold">CodePaste</span>
+            <span className="text-lg font-semibold">VerifyPal</span>
           </div>
           <nav className="flex items-center gap-4">
             <a 
@@ -118,7 +118,7 @@ export default function Home() {
                 Manually
               </h1>
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto" data-testid="text-hero-description">
-                CodePaste automatically detects sign-in codes from your email, fills them 
+                VerifyPal automatically detects sign-in codes from your email, fills them 
                 into verification forms, and submits for you. No more tab switching, no more copy-paste.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -204,9 +204,9 @@ export default function Home() {
         <section id="features" className="py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4" data-testid="text-features-title">Why CodePaste?</h2>
+              <h2 className="text-3xl font-bold mb-4" data-testid="text-features-title">Why VerifyPal?</h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Simple, secure, and lightning fast. Here's what makes CodePaste the best 
+                Simple, secure, and lightning fast. Here's what makes VerifyPal the best 
                 verification code assistant.
               </p>
             </div>
@@ -259,7 +259,7 @@ export default function Home() {
                 <div>
                   <h2 className="text-3xl font-bold mb-4" data-testid="text-privacy-title">Your Privacy Matters</h2>
                   <p className="text-muted-foreground mb-6">
-                    CodePaste is designed with privacy at its core. All code detection and 
+                    VerifyPal is designed with privacy at its core. All code detection and 
                     processing happens entirely on your device.
                   </p>
                   <ul className="space-y-4">
@@ -337,7 +337,7 @@ export default function Home() {
                     Ready to Save Time?
                   </h2>
                   <p className="text-primary-foreground/80 mb-8 max-w-lg mx-auto">
-                    Install CodePaste now and never manually copy a verification code again.
+                    Install VerifyPal now and never manually copy a verification code again.
                   </p>
                   <Button 
                     size="lg" 
@@ -424,7 +424,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Clipboard className="h-5 w-5 text-primary" />
-              <span className="font-semibold">CodePaste</span>
+              <span className="font-semibold">VerifyPal</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Built with privacy in mind. No data collection.

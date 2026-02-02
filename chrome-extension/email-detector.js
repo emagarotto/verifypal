@@ -586,14 +586,14 @@
 
   function showCodeNotification(code) {
     // Create a small notification overlay
-    const existingNotif = document.getElementById('codepaste-notification');
+    const existingNotif = document.getElementById('verifypal-notification');
     if (existingNotif) {
       existingNotif.remove();
     }
 
     // Create elements programmatically to avoid CSP issues with innerHTML
     const notification = document.createElement('div');
-    notification.id = 'codepaste-notification';
+    notification.id = 'verifypal-notification';
     
     const container = document.createElement('div');
     Object.assign(container.style, {
