@@ -115,7 +115,7 @@
   function detectEmailProvider() {
     const url = window.location.hostname;
     if (url.includes('mail.google.com')) return 'gmail';
-    if (url.includes('outlook')) return 'outlook';
+    if (url.includes('outlook') || url.includes('hotmail')) return 'outlook';
     if (url.includes('mail.yahoo.com')) return 'yahoo';
     return 'unknown';
   }

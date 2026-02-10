@@ -12,6 +12,8 @@
     "https://mail.google.com/*",
     "https://outlook.live.com/*",
     "https://outlook.office.com/*",
+    "https://outlook.office365.com/*",
+    "https://*.hotmail.com/*",
     "https://mail.yahoo.com/*",
     "*://*/*"
   ],
@@ -39,6 +41,8 @@
         "https://mail.google.com/*",
         "https://outlook.live.com/*",
         "https://outlook.office.com/*",
+        "https://outlook.office365.com/*",
+        "https://*.hotmail.com/*",
         "https://mail.yahoo.com/*"
       ],
       "js": ["email-detector.js"],
