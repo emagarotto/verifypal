@@ -148,9 +148,11 @@
       } else if (provider === 'yahoo') {
         // Yahoo shows time in message view
         const timeEl = document.querySelector('[data-test-id="message-time"]') ||
-                       document.querySelector('.date-container time');
+                       document.querySelector('.date-container time') ||
+                       document.querySelector('[data-test-id="message-group-date"]') ||
+                       document.querySelector('time');
         if (timeEl) {
-          const datetime = timeEl.getAttribute('datetime');
+          const datetime = timeEl.getAttribute('datetime') || timeEl.getAttribute('title');
           if (datetime) {
             emailTime = new Date(datetime).getTime();
           }
@@ -289,24 +291,51 @@
     } else if (provider === 'yahoo') {
       // Yahoo email body (when email is open)
       const emailBody = document.querySelector('.msg-body') ||
-                        document.querySelector('[data-test-id="message-view-body"]');
+                        document.querySelector('[data-test-id="message-view-body"]') ||
+                        document.querySelector('[data-test-id="message-view-body-content"]') ||
+                        document.querySelector('.message-view-body') ||
+                        document.querySelector('.email-content') ||
+                        document.querySelector('.thread-body') ||
+                        document.querySelector('[role="main"] .mail-message-body');
       if (emailBody) {
         content = emailBody.textContent || '';
         isOpenedEmail = true;
         emailTimestamp = getEmailTimestamp();
+      }
+
+      // Yahoo subject line
+      const yahooSubjectEl = document.querySelector('[data-test-id="message-subject"]') ||
+                             document.querySelector('.subject-text') ||
+                             document.querySelector('[data-test-id="message-group-subject-text"]');
+      if (yahooSubjectEl) {
+        subject = yahooSubjectEl.textContent || '';
       }
       
       // Yahoo email preview snippets (visible in inbox list)
       if (!content) {
         const previewSnippets = document.querySelectorAll(
           '[data-test-id="message-list-item"] span, ' +
+          '[data-test-id="message-list-item"], ' +
+          '[data-test-id="snippet"], ' +
           '.D_F.W_6h8.Z_0I.H_28Wy, ' +
-          '[data-test-id="snippet"]'
+          'li[data-test-id] span, ' +
+          'a[data-test-id="message-list-item"] span'
         );
         previewSnippets.forEach(snippet => {
           content += ' ' + (snippet.textContent || '');
         });
         emailTimestamp = null; // No timestamp for inbox previews
+      }
+
+      // Broad fallback: scan entire visible mail content area
+      if (!content) {
+        const mailContainer = document.querySelector('[role="main"]') ||
+                              document.querySelector('#mail-app-component') ||
+                              document.querySelector('[data-test-id="app"]');
+        if (mailContainer) {
+          content = mailContainer.textContent || '';
+          emailTimestamp = null;
+        }
       }
     }
 
