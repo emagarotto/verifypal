@@ -138,9 +138,12 @@
       } else if (provider === 'outlook') {
         // Outlook shows time in the message header
         const timeEl = document.querySelector('[role="heading"] + div time') ||
-                       document.querySelector('time[datetime]');
+                       document.querySelector('time[datetime]') ||
+                       document.querySelector('[aria-label*="Received"] time') ||
+                       document.querySelector('[role="main"] time') ||
+                       document.querySelector('span[aria-label*=":"]');
         if (timeEl) {
-          const datetime = timeEl.getAttribute('datetime');
+          const datetime = timeEl.getAttribute('datetime') || timeEl.getAttribute('title');
           if (datetime) {
             emailTime = new Date(datetime).getTime();
           }
@@ -260,9 +263,14 @@
       }
     } else if (provider === 'outlook') {
       // Outlook email body (when email is open)
-      const emailBody = document.querySelector('[role="main"] .XbIp4') ||
-                        document.querySelector('.customScrollBar') ||
-                        document.querySelector('[data-app-section="ConversationContainer"]');
+      const emailBody = document.querySelector('[data-app-section="ConversationContainer"]') ||
+                        document.querySelector('[role="main"] [aria-label*="message" i]') ||
+                        document.querySelector('[role="main"] .customScrollBar') ||
+                        document.querySelector('[role="main"] div[class*="body"]') ||
+                        document.querySelector('[aria-label="Message body"]') ||
+                        document.querySelector('[aria-label*="Reading Pane"]') ||
+                        document.querySelector('[role="article"]') ||
+                        document.querySelector('.wide-content-host');
       if (emailBody) {
         content = emailBody.textContent || '';
         isOpenedEmail = true;
@@ -270,7 +278,9 @@
       }
       
       // Outlook subject
-      const subjectEl = document.querySelector('[role="heading"]');
+      const subjectEl = document.querySelector('[role="heading"]') ||
+                        document.querySelector('[aria-label*="Subject"]') ||
+                        document.querySelector('span[title][class*="subject" i]');
       if (subjectEl) {
         subject = subjectEl.textContent || '';
       }
@@ -278,15 +288,27 @@
       // Outlook email preview snippets (visible in inbox list)
       if (!content) {
         const previewSnippets = document.querySelectorAll(
-          '[aria-label*="message"] .jGG6V, ' +
-          '[data-focuszone-id] .XG5Jd, ' +
-          '.hcptT, .OZZZK, ' +
-          '[role="option"] span'
+          '[role="option"] span, ' +
+          '[role="listbox"] [role="option"], ' +
+          '[aria-label*="message" i] span, ' +
+          '[data-convid] span, ' +
+          'div[class*="preview"] span, ' +
+          'div[class*="snippet"] span'
         );
         previewSnippets.forEach(snippet => {
           content += ' ' + (snippet.textContent || '');
         });
         emailTimestamp = null; // No timestamp for inbox previews
+      }
+
+      // Broad fallback: scan entire visible mail content area
+      if (!content) {
+        const mailContainer = document.querySelector('[role="main"]') ||
+                              document.querySelector('[data-app-section="MailList"]');
+        if (mailContainer) {
+          content = mailContainer.textContent || '';
+          emailTimestamp = null;
+        }
       }
     } else if (provider === 'yahoo') {
       // Yahoo email body (when email is open)
