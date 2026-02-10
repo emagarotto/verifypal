@@ -113,6 +113,7 @@ async function findEmailTabAndScan() {
     '*://outlook.live.com/*',
     '*://outlook.office.com/*',
     '*://outlook.office365.com/*',
+    '*://*.hotmail.com/*',
     '*://mail.yahoo.com/*'
   ];
   
